@@ -1,5 +1,8 @@
 # Input Data: Quarterly Business Report
 
+## Company
+- **Company name:** Acme Corp
+
 ## Report Period
 - **Current quarter:** Q3 2025
 - **Comparison quarter:** Q3 2024

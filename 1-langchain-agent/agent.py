@@ -6,7 +6,7 @@ one by calling an LLM with the step's spec, output format, and the
 previous step's output. All outputs are recorded in context.json.
 
 Usage:
-    python runner.py <pipeline_directory>
+    python agent.py <pipeline_directory>
 
 Requires Ollama running locally with the target model pulled.
 """
@@ -49,9 +49,9 @@ def run_pipeline(pipeline_dir: str) -> str:
 
     context: dict = {}
     context_path = root / "context.json"
-    llm = ChatOllama(model="gemma4:31b", num_ctx=8192)
+    llm = ChatOllama(model="gemma4", num_ctx=32768, temperature=0)
 
-    previous_output: str | None = None
+    previous_outputs: dict[str, str] = {}
 
     for step_dir in steps:
         step_name = step_dir.name
@@ -73,18 +73,23 @@ def run_pipeline(pipeline_dir: str) -> str:
             "the specified format."
         )
 
-        if previous_output is None:
-            user_content = (
-                "Here is the raw input data for this pipeline run:\n\n"
-                f"{input_data}\n\n"
-                "Execute this step and produce the output in the specified format."
+        prior_steps_text = ""
+        if previous_outputs:
+            sections = "\n\n---\n\n".join(
+                f"### {name}\n\n{content}"
+                for name, content in previous_outputs.items()
             )
-        else:
-            user_content = (
-                "Here is the output from the previous step:\n\n"
-                f"{previous_output}\n\n"
-                "Execute this step and produce the output in the specified format."
+            prior_steps_text = (
+                "Here are the outputs from all previous steps:\n\n"
+                f"{sections}\n\n"
             )
+
+        user_content = (
+            "Here is the raw input data for this pipeline run:\n\n"
+            f"{input_data}\n\n"
+            f"{prior_steps_text}"
+            "Execute this step and produce the output in the specified format."
+        )
 
         response = llm.invoke([
             SystemMessage(content=system_prompt),
@@ -100,15 +105,20 @@ def run_pipeline(pipeline_dir: str) -> str:
         context_path.write_text(json.dumps(context, indent=2))
 
         print(f"[{step_name}] done ({len(step_output)} chars)\n")
-        previous_output = step_output
+        previous_outputs[step_name] = step_output
 
-    print("Pipeline complete. Results in context.json")
-    return previous_output
+    final_output = previous_outputs[steps[-1].name] if previous_outputs else ""
+
+    report_path = root / "final_report.md"
+    report_path.write_text(final_output)
+
+    print(f"Pipeline complete. Results in context.json and {report_path}")
+    return final_output
 
 
 def main():
     if len(sys.argv) != 2:
-        print("Usage: python runner.py <pipeline_directory>")
+        print("Usage: python agent.py <pipeline_directory>")
         sys.exit(1)
 
     pipeline_dir = sys.argv[1]
@@ -118,8 +128,7 @@ def main():
 
     final_output = run_pipeline(pipeline_dir)
     if final_output:
-        print("\n=== FINAL REPORT ===\n")
-        print(final_output)
+        print(f"Final report saved to final_report.md")
 
 
 if __name__ == "__main__":

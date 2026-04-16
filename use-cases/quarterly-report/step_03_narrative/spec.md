@@ -12,7 +12,6 @@ Write a professional executive summary that interprets the analysis from the pre
 - Close with a brief outlook paragraph that notes the areas flagged in the analysis as requiring attention, without making forward-looking financial predictions.
 - The tone should be confident, factual, and measured. Avoid superlatives such as "exceptional" or "outstanding." Let the numbers speak.
 - Do not include any figures or claims that do not appear in the analysis step output. Do not invent context.
-- Use the placeholder "[Company]" in place of any company name throughout.
-- Use the placeholder "[Quarter]" for the quarter name (e.g. Q3 2025) throughout.
+- Use the company name from the input data throughout.
+- Use the actual quarter name from the input data throughout (e.g. Q3 2025).
 - Format with a title, a period line, and clear section headings.
-- After the narrative, append a clearly labelled section titled "Analysis Data" and reproduce all analysis tables from the previous step verbatim. Do not modify any values, labels, or structure.
