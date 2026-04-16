@@ -32,6 +32,88 @@ def read_file(path: Path) -> str:
     return path.read_text() if path.exists() else ""
 
 
+def build_system_prompt(pipeline_md: str, spec: str, output_format: str) -> str:
+    return (
+        "You are an AI assistant executing one step of a multi-step pipeline.\n\n"
+        "## Pipeline Overview\n"
+        f"{pipeline_md}\n\n"
+        "## Your Task\n"
+        f"{spec}\n\n"
+        "## Required Output Format\n"
+        f"{output_format}\n\n"
+        "Produce ONLY the output described in the required output format. "
+        "Do not include any preamble, commentary, or explanation outside "
+        "the specified format."
+    )
+
+
+def format_prior_outputs(previous_outputs: dict[str, str]) -> str:
+    if not previous_outputs:
+        return ""
+        
+    sections = "\n\n---\n\n".join(
+        f"### {name}\n\n{content}"
+        for name, content in previous_outputs.items()
+    )
+    return f"Here are the outputs from all previous steps:\n\n{sections}\n\n"
+
+
+def build_user_content(input_data: str, previous_outputs: dict[str, str]) -> str:
+    prior_steps_text = format_prior_outputs(previous_outputs)
+    return (
+        "Here is the raw input data for this pipeline run:\n\n"
+        f"{input_data}\n\n"
+        f"{prior_steps_text}"
+        "Execute this step and produce the output in the specified format."
+    )
+
+
+def save_context(context_path: Path, context: dict) -> None:
+    context_path.write_text(json.dumps(context, indent=2))
+
+
+def save_final_report(root: Path, content: str) -> Path:
+    report_path = root / "final_report.md"
+    report_path.write_text(content)
+    return report_path
+
+
+def run_step(
+    step_dir: Path,
+    pipeline_md: str,
+    input_data: str,
+    previous_outputs: dict[str, str],
+    context: dict,
+    context_path: Path,
+    llm: ChatOllama,
+) -> str:
+    """Execute a single pipeline step, persist its output to context, and return the output."""
+    step_name = step_dir.name
+    print(f"[{step_name}] running ...")
+
+    spec = read_file(step_dir / "spec.md")
+    output_format = read_file(step_dir / "output.md")
+
+    system_prompt = build_system_prompt(pipeline_md, spec, output_format)
+    user_content = build_user_content(input_data, previous_outputs)
+
+    response = llm.invoke([
+        SystemMessage(content=system_prompt),
+        HumanMessage(content=user_content),
+    ])
+    step_output = response.content
+
+    context[step_name] = {
+        "output_type": "text",
+        "content": step_output,
+        "description": f"Output of {step_name}",
+    }
+    save_context(context_path, context)
+
+    print(f"[{step_name}] done ({len(step_output)} chars)\n")
+    return step_output
+
+
 def run_pipeline(pipeline_dir: str) -> str:
     """Execute the full pipeline and return the final step's output."""
     root = Path(pipeline_dir).resolve()
@@ -54,63 +136,13 @@ def run_pipeline(pipeline_dir: str) -> str:
     previous_outputs: dict[str, str] = {}
 
     for step_dir in steps:
-        step_name = step_dir.name
-        print(f"[{step_name}] running ...")
-
-        spec = read_file(step_dir / "spec.md")
-        output_format = read_file(step_dir / "output.md")
-
-        system_prompt = (
-            "You are an AI assistant executing one step of a multi-step pipeline.\n\n"
-            "## Pipeline Overview\n"
-            f"{pipeline_md}\n\n"
-            "## Your Task\n"
-            f"{spec}\n\n"
-            "## Required Output Format\n"
-            f"{output_format}\n\n"
-            "Produce ONLY the output described in the required output format. "
-            "Do not include any preamble, commentary, or explanation outside "
-            "the specified format."
+        step_output = run_step(
+            step_dir, pipeline_md, input_data, previous_outputs, context, context_path, llm
         )
+        previous_outputs[step_dir.name] = step_output
 
-        prior_steps_text = ""
-        if previous_outputs:
-            sections = "\n\n---\n\n".join(
-                f"### {name}\n\n{content}"
-                for name, content in previous_outputs.items()
-            )
-            prior_steps_text = (
-                "Here are the outputs from all previous steps:\n\n"
-                f"{sections}\n\n"
-            )
-
-        user_content = (
-            "Here is the raw input data for this pipeline run:\n\n"
-            f"{input_data}\n\n"
-            f"{prior_steps_text}"
-            "Execute this step and produce the output in the specified format."
-        )
-
-        response = llm.invoke([
-            SystemMessage(content=system_prompt),
-            HumanMessage(content=user_content),
-        ])
-        step_output = response.content
-
-        context[step_name] = {
-            "output_type": "text",
-            "content": step_output,
-            "description": f"Output of {step_name}",
-        }
-        context_path.write_text(json.dumps(context, indent=2))
-
-        print(f"[{step_name}] done ({len(step_output)} chars)\n")
-        previous_outputs[step_name] = step_output
-
-    final_output = previous_outputs[steps[-1].name] if previous_outputs else ""
-
-    report_path = root / "final_report.md"
-    report_path.write_text(final_output)
+    final_output = previous_outputs[steps[-1].name]
+    report_path = save_final_report(root, final_output)
 
     print(f"Pipeline complete. Results in context.json and {report_path}")
     return final_output
