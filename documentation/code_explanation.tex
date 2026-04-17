@@ -1,0 +1,1003 @@
+\documentclass[12pt, a4paper]{article}
+
+% ─── Packages ────────────────────────────────────────────────────────────────
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{fancyhdr}
+\usepackage{mdframed}
+\usepackage{parskip}
+\usepackage{microtype}
+\usepackage{graphicx}
+
+% ─── Colours ─────────────────────────────────────────────────────────────────
+\definecolor{primary}{HTML}{1D9E75}
+\definecolor{secondary}{HTML}{534AB7}
+\definecolor{accent}{HTML}{BA7517}
+\definecolor{codebg}{HTML}{F5F5F0}
+\definecolor{codeborder}{HTML}{D3D1C7}
+\definecolor{notebg}{HTML}{E1F5EE}
+\definecolor{noteborder}{HTML}{0F6E56}
+\definecolor{warnbg}{HTML}{FAEEDA}
+\definecolor{warnborder}{HTML}{854F0B}
+\definecolor{darktext}{HTML}{2C2C2A}
+\definecolor{mutedtext}{HTML}{5F5E5A}
+
+% Python syntax highlighting colours
+\definecolor{pykeyword}{HTML}{0F6E56}
+\definecolor{pystring}{HTML}{BA7517}
+\definecolor{pycomment}{HTML}{7F7D75}
+\definecolor{pynumber}{HTML}{534AB7}
+\definecolor{pybuiltin}{HTML}{1D9E75}
+
+% ─── Hyperref ────────────────────────────────────────────────────────────────
+\hypersetup{
+  colorlinks=true,
+  linkcolor=secondary,
+  urlcolor=primary,
+  citecolor=primary,
+  pdftitle={Modular Agentic Pipeline — Code Explanation},
+  pdfauthor={},
+}
+
+% ─── Typography ──────────────────────────────────────────────────────────────
+\titleformat{\section}{\Large\bfseries\color{darktext}}{}{0em}{}[\color{primary}\titlerule]
+\titleformat{\subsection}{\large\bfseries\color{darktext}}{}{0em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{mutedtext}}{}{0em}{}
+
+\titlespacing{\section}{0pt}{2em}{0.8em}
+\titlespacing{\subsection}{0pt}{1.4em}{0.4em}
+\titlespacing{\subsubsection}{0pt}{1em}{0.3em}
+
+% ─── Code listings ───────────────────────────────────────────────────────────
+\lstdefinestyle{filestyle}{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small\color{darktext},
+  breaklines=true,
+  breakatwhitespace=false,
+  frame=single,
+  rulecolor=\color{codeborder},
+  framesep=8pt,
+  xleftmargin=8pt,
+  xrightmargin=8pt,
+  aboveskip=0.8em,
+  belowskip=0.8em,
+  showstringspaces=false,
+  tabsize=2,
+}
+
+% Python listing style — syntax highlighted
+\lstdefinestyle{pythonstyle}{
+  language=Python,
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small\color{darktext},
+  keywordstyle=\color{pykeyword}\bfseries,
+  stringstyle=\color{pystring},
+  commentstyle=\color{pycomment}\itshape,
+  numberstyle=\tiny\color{mutedtext},
+  emph={self,cls},
+  emphstyle=\color{pynumber}\itshape,
+  morekeywords={match,case},
+  breaklines=true,
+  breakatwhitespace=false,
+  frame=single,
+  rulecolor=\color{codeborder},
+  framesep=8pt,
+  xleftmargin=16pt,
+  xrightmargin=8pt,
+  aboveskip=0.8em,
+  belowskip=0.8em,
+  showstringspaces=false,
+  tabsize=4,
+  numbers=left,
+  numbersep=8pt,
+  literate={->}{{$\rightarrow$}}1,
+}
+
+% Shell / bash listing style
+\lstdefinestyle{shellstyle}{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small\color{darktext},
+  keywordstyle=\color{pykeyword}\bfseries,
+  commentstyle=\color{pycomment}\itshape,
+  breaklines=true,
+  breakatwhitespace=false,
+  frame=single,
+  rulecolor=\color{codeborder},
+  framesep=8pt,
+  xleftmargin=8pt,
+  xrightmargin=8pt,
+  aboveskip=0.8em,
+  belowskip=0.8em,
+  showstringspaces=false,
+  tabsize=2,
+  morekeywords={python,pip,brew,ollama,source,cd,mkdir,export},
+}
+
+\lstset{style=filestyle}
+
+% ─── Custom environments ─────────────────────────────────────────────────────
+\newmdenv[
+  backgroundcolor=notebg,
+  linecolor=noteborder,
+  linewidth=3pt,
+  topline=false,
+  bottomline=false,
+  rightline=false,
+  innerleftmargin=12pt,
+  innerrightmargin=12pt,
+  innertopmargin=8pt,
+  innerbottommargin=8pt,
+]{notebox}
+
+\newmdenv[
+  backgroundcolor=warnbg,
+  linecolor=warnborder,
+  linewidth=3pt,
+  topline=false,
+  bottomline=false,
+  rightline=false,
+  innerleftmargin=12pt,
+  innerrightmargin=12pt,
+  innertopmargin=8pt,
+  innerbottommargin=8pt,
+]{warnbox}
+
+% ─── Header / Footer ─────────────────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{mutedtext}Modular Agentic Pipeline — Code Explanation}
+\fancyfoot[C]{\small\color{mutedtext}\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{codeborder}\leaders\hrule height \headrulewidth\hfill}}
+
+% ─── Document ─────────────────────────────────────────────────────────────────
+\begin{document}
+
+% ── Title page ────────────────────────────────────────────────────────────────
+\begin{titlepage}
+  \centering
+  \vspace*{3cm}
+  {\color{primary}\rule{\linewidth}{2pt}}
+  \vspace{1cm}
+
+  {\Huge\bfseries\color{darktext} Modular Agentic Pipeline}\\[0.5em]
+  {\Large\color{mutedtext} Code Explanation \& Setup Guide}
+
+  \vspace{1cm}
+  {\color{primary}\rule{\linewidth}{2pt}}
+
+  \vspace{2cm}
+  {\large\color{mutedtext}
+    A walkthrough of the two reference implementations:\\
+    a simple text-only runner, and a tool-calling agent.
+  }
+
+  \vfill
+  {\small\color{mutedtext} Version 1.0}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Introduction}
+% ══════════════════════════════════════════════════════════════════════════════
+
+This document explains the two reference implementations of the modular agentic pipeline runner that live in the repository:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \texttt{1-langchain-agent/agent.py} — a simple, text-only pipeline runner. The agent is given the pipeline overview, the step spec, and the raw input data as part of its prompt, and it produces a text output. No tools.
+  \item \texttt{2-langchain-agent-with-tools/} — a tool-calling agent that reads and writes pipeline state through explicit tool calls. Each step runs its own isolated agent loop, and heavy outputs (CSV, markdown files) are persisted to disk.
+\end{itemize}
+
+The first is the minimum viable implementation and the easiest to read. The second is what you would use in production when the outputs are larger, more varied, or when steps need to cherry-pick which prior outputs to read.
+
+This guide starts with a one-time environment setup that applies to both agents, then walks through each agent block by block. Pair this document with the \textit{Design Guide} (\texttt{user\_specs.tex}) to understand how the pipeline files you author get consumed at runtime.
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Environment Setup}
+% ══════════════════════════════════════════════════════════════════════════════
+
+Both agents run locally against an \href{https://ollama.com}{Ollama} instance. There are no cloud API keys to configure. The setup has three parts: Python, Ollama, and the pipeline dependencies.
+
+\subsection{Prerequisites}
+
+\begin{itemize}[leftmargin=1.5em]
+  \item Python 3.10 or newer.
+  \item \texttt{git} for cloning the repository.
+  \item macOS, Linux, or Windows with WSL. The commands below assume a Unix shell.
+\end{itemize}
+
+\subsection{Step 1 — Install Ollama and pull a model}
+
+Install Ollama from \url{https://ollama.com/download} (or via Homebrew on macOS), then pull the model the agents are configured to use:
+
+\begin{lstlisting}[style=shellstyle]
+# macOS with Homebrew
+brew install ollama
+
+# Start the Ollama daemon (runs in background)
+ollama serve &
+
+# Pull the model referenced in the agents
+ollama pull gemma4
+\end{lstlisting}
+
+\begin{notebox}
+Both agents are wired to the \texttt{gemma4} model via \texttt{ChatOllama(model="gemma4", ...)}. If you want to use a different local model (for example \texttt{llama3.1} or \texttt{qwen2.5}), pull it with \texttt{ollama pull <name>} and change the \texttt{model} argument in \texttt{agent.py}. The tool-calling agent additionally requires a model that supports function/tool calling.
+\end{notebox}
+
+\subsection{Step 2 — Clone the repo and create a virtual environment}
+
+\begin{lstlisting}[style=shellstyle]
+git clone <repo-url> report-agent
+cd report-agent
+
+python3 -m venv venv
+source venv/bin/activate
+\end{lstlisting}
+
+\subsection{Step 3 — Install Python dependencies}
+
+The repository root contains a \texttt{requirements.txt}:
+
+\begin{lstlisting}[language={}]
+langchain-classic>=1.0
+langchain-ollama>=0.3.0
+\end{lstlisting}
+
+The tool-calling agent also uses \texttt{pyyaml} for its config file. Install everything in one go:
+
+\begin{lstlisting}[style=shellstyle]
+pip install -r requirements.txt
+pip install pyyaml
+\end{lstlisting}
+
+\subsection{Step 4 — Verify the setup}
+
+Run a quick smoke test against Ollama:
+
+\begin{lstlisting}[style=shellstyle]
+python -c "from langchain_ollama import ChatOllama; \
+  print(ChatOllama(model='gemma4').invoke('say hi').content)"
+\end{lstlisting}
+
+If you see a greeting, you are ready to run either agent.
+
+\subsection{Step 5 — Run a pipeline}
+
+The two agents take their pipeline location differently:
+
+\begin{lstlisting}[style=shellstyle]
+# Simple agent - path is a command-line argument
+python 1-langchain-agent/agent.py use-cases/1-quarterly-report
+
+# Tool-calling agent - path is read from config.yaml
+python 2-langchain-agent-with-tools/agent.py
+\end{lstlisting}
+
+Both agents expect a pipeline directory laid out as described in the \textit{Design Guide}: a \texttt{pipeline.md}, an \texttt{input\_data.md}, and one or more \texttt{step\_NN\_<name>/} subdirectories each containing \texttt{spec.md} and \texttt{output.md}.
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Agent 1 — Simple Text-Only Runner}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\texttt{1-langchain-agent/agent.py} is the simplest possible implementation of the pipeline runner. It reads every pipeline file, builds a single prompt per step, calls the LLM, and writes the response back. There are no tools and no agent loop — just one LLM call per step.
+
+\subsection{High-level flow}
+
+For a pipeline with steps \texttt{step\_01}, \texttt{step\_02}, \ldots, \texttt{step\_N}, the runner does the following:
+
+\begin{enumerate}[leftmargin=1.5em]
+  \item Load \texttt{pipeline.md} and \texttt{input\_data.md} from the pipeline root.
+  \item Discover the step directories in sorted order.
+  \item For each step: read \texttt{spec.md} and \texttt{output.md}, build a system prompt and a user message, invoke the model, and append the result to \texttt{context.json}.
+  \item After the last step, save its output verbatim as \texttt{final\_report.md}.
+\end{enumerate}
+
+All previous step outputs are accumulated in a dictionary and passed into every subsequent step's user prompt. This is simple and robust for small pipelines but does not scale: the prompt grows with each step.
+
+\subsection{Imports and docstring}
+
+\begin{lstlisting}[style=pythonstyle]
+import json
+import sys
+from pathlib import Path
+
+from langchain_ollama import ChatOllama
+from langchain_core.messages import HumanMessage, SystemMessage
+\end{lstlisting}
+
+The runner only needs two things from LangChain: the \texttt{ChatOllama} chat model wrapper, and the \texttt{HumanMessage} / \texttt{SystemMessage} classes for constructing a two-message conversation. Everything else is the Python standard library.
+
+\subsection{Discovering steps and reading files}
+
+\begin{lstlisting}[style=pythonstyle]
+def discover_steps(pipeline_dir: Path) -> list[Path]:
+    """Find all step_* directories, sorted by name."""
+    return sorted(
+        d for d in pipeline_dir.iterdir()
+        if d.is_dir() and d.name.startswith("step_")
+    )
+
+
+def read_file(path: Path) -> str:
+    """Read a file and return its contents, or empty string if missing."""
+    return path.read_text() if path.exists() else ""
+\end{lstlisting}
+
+\texttt{discover\_steps} is the heart of the "ordering by filename" convention. Because step directories are named \texttt{step\_01\_\ldots}, \texttt{step\_02\_\ldots}, Python's default lexicographic sort puts them in the right order. The zero-padded prefix matters: without it, \texttt{step\_10} would sort before \texttt{step\_2}.
+
+\texttt{read\_file} is a defensive helper. It returns an empty string if the file does not exist, so a missing \texttt{output.md} or \texttt{input\_data.md} does not crash the runner — it just produces a weaker prompt.
+
+\subsection{Building the prompt}
+
+The agent constructs two messages per step. The system message carries the stable context (pipeline, task, output format). The user message carries the per-run payload (raw input data and any prior step outputs).
+
+\begin{lstlisting}[style=pythonstyle]
+def build_system_prompt(pipeline_md: str, spec: str, output_format: str) -> str:
+    return (
+        "You are an AI assistant executing one step of a multi-step pipeline.\n\n"
+        "## Pipeline Overview\n"
+        f"{pipeline_md}\n\n"
+        "## Your Task\n"
+        f"{spec}\n\n"
+        "## Required Output Format\n"
+        f"{output_format}\n\n"
+        "Produce ONLY the output described in the required output format. "
+        "Do not include any preamble, commentary, or explanation outside "
+        "the specified format."
+    )
+\end{lstlisting}
+
+Notice the tight instruction at the end. Without it, models often prepend "Here is the output:" or wrap the result in backticks, which breaks any downstream step that expects the raw format.
+
+\begin{lstlisting}[style=pythonstyle]
+def format_prior_outputs(previous_outputs: dict[str, str]) -> str:
+    if not previous_outputs:
+        return ""
+
+    sections = "\n\n---\n\n".join(
+        f"### {name}\n\n{content}"
+        for name, content in previous_outputs.items()
+    )
+    return f"Here are the outputs from all previous steps:\n\n{sections}\n\n"
+
+
+def build_user_content(input_data: str, previous_outputs: dict[str, str]) -> str:
+    prior_steps_text = format_prior_outputs(previous_outputs)
+    return (
+        "Here is the raw input data for this pipeline run:\n\n"
+        f"{input_data}\n\n"
+        f"{prior_steps_text}"
+        "Execute this step and produce the output in the specified format."
+    )
+\end{lstlisting}
+
+Every step sees \texttt{input\_data.md} in its user message, followed by all prior step outputs concatenated and separated by \texttt{---}. For step 1, \texttt{previous\_outputs} is empty and only the raw input is passed. For step N, the full history is included.
+
+\begin{warnbox}
+This "pass everything every time" strategy is simple but linear in pipeline length. Long pipelines with verbose outputs will eventually blow past the model's context window. That is precisely the problem the tool-calling agent solves.
+\end{warnbox}
+
+\subsection{Persisting state}
+
+\begin{lstlisting}[style=pythonstyle]
+def save_context(context_path: Path, context: dict) -> None:
+    context_path.write_text(json.dumps(context, indent=2))
+
+
+def save_final_report(root: Path, content: str) -> Path:
+    report_path = root / "final_report.md"
+    report_path.write_text(content)
+    return report_path
+\end{lstlisting}
+
+Two single-purpose writers: one for the runtime state (\texttt{context.json}), one for the convenience copy of the final step's output (\texttt{final\_report.md}). The final report is just the last step's raw text — if your last step is supposed to produce markdown, you get markdown; if \LaTeX, you get \LaTeX.
+
+\subsection{Running a single step}
+
+\begin{lstlisting}[style=pythonstyle]
+def run_step(
+    step_dir: Path,
+    pipeline_md: str,
+    input_data: str,
+    previous_outputs: dict[str, str],
+    context: dict,
+    context_path: Path,
+    llm: ChatOllama,
+) -> str:
+    """Execute a single pipeline step, persist its output, and return the text."""
+    step_name = step_dir.name
+    print(f"[{step_name}] running ...")
+
+    spec = read_file(step_dir / "spec.md")
+    output_format = read_file(step_dir / "output.md")
+
+    system_prompt = build_system_prompt(pipeline_md, spec, output_format)
+    user_content = build_user_content(input_data, previous_outputs)
+
+    response = llm.invoke([
+        SystemMessage(content=system_prompt),
+        HumanMessage(content=user_content),
+    ])
+    step_output = response.content
+
+    context[step_name] = {
+        "output_type": "text",
+        "content": step_output,
+        "description": f"Output of {step_name}",
+    }
+    save_context(context_path, context)
+
+    print(f"[{step_name}] done ({len(step_output)} chars)\n")
+    return step_output
+\end{lstlisting}
+
+\texttt{run\_step} is the unit of work. It reads the step's two spec files, assembles the prompt, invokes the model, and writes the result to \texttt{context.json} with an entry keyed by the step directory name. Note that every output is stored as \texttt{"output\_type": "text"} — the simple agent does not distinguish file vs. text outputs because there is no tool to write files with.
+
+The \texttt{llm.invoke([...])} call is synchronous and returns an \texttt{AIMessage}. We pull its \texttt{.content} attribute for the raw string.
+
+\subsection{Running the pipeline}
+
+\begin{lstlisting}[style=pythonstyle]
+def run_pipeline(pipeline_dir: str) -> str:
+    """Execute the full pipeline and return the final step's output."""
+    root = Path(pipeline_dir).resolve()
+
+    pipeline_md = read_file(root / "pipeline.md")
+    input_data = read_file(root / "input_data.md")
+
+    steps = discover_steps(root)
+    if not steps:
+        print("No step directories found.")
+        return ""
+
+    print(f"Pipeline: {root.name}")
+    print(f"Steps:    {[s.name for s in steps]}\n")
+
+    context: dict = {}
+    context_path = root / "context.json"
+    llm = ChatOllama(model="gemma4", num_ctx=32768, temperature=0)
+
+    previous_outputs: dict[str, str] = {}
+
+    for step_dir in steps:
+        step_output = run_step(
+            step_dir, pipeline_md, input_data,
+            previous_outputs, context, context_path, llm,
+        )
+        previous_outputs[step_dir.name] = step_output
+
+    final_output = previous_outputs[steps[-1].name]
+    report_path = save_final_report(root, final_output)
+
+    print(f"Pipeline complete. Results in context.json and {report_path}")
+    return final_output
+\end{lstlisting}
+
+This is where the whole loop lives. A few details worth noting:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \texttt{num\_ctx=32768} bumps Ollama's default context window so that the accumulated prompt has room to grow across steps.
+  \item \texttt{temperature=0} makes outputs deterministic for a given input. For creative steps (drafting narratives) you may want to raise it.
+  \item \texttt{previous\_outputs} is built up step by step and passed into every subsequent \texttt{run\_step} call. It is the only channel carrying cross-step state during the run; \texttt{context.json} is there for persistence and inspection.
+\end{itemize}
+
+\subsection{Entry point}
+
+\begin{lstlisting}[style=pythonstyle]
+def main():
+    if len(sys.argv) != 2:
+        print("Usage: python agent.py <pipeline_directory>")
+        sys.exit(1)
+
+    pipeline_dir = sys.argv[1]
+    if not Path(pipeline_dir).is_dir():
+        print(f"Error: {pipeline_dir} is not a directory")
+        sys.exit(1)
+
+    final_output = run_pipeline(pipeline_dir)
+    if final_output:
+        print(f"Final report saved to final_report.md")
+
+
+if __name__ == "__main__":
+    main()
+\end{lstlisting}
+
+Minimal CLI: one positional argument, the pipeline directory. Invoke from the repository root:
+
+\begin{lstlisting}[style=shellstyle]
+python 1-langchain-agent/agent.py use-cases/1-quarterly-report
+\end{lstlisting}
+
+After the run, the pipeline directory will contain a populated \texttt{context.json} and a \texttt{final\_report.md}.
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Agent 2 — Tool-Calling Agent}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\texttt{2-langchain-agent-with-tools/} replaces the single LLM call per step with a \textbf{per-step agent loop}. Each step gets its own \texttt{AgentExecutor}. Inside that loop the model decides when to read the raw input, when to read earlier step outputs, and when to persist its own results — all through explicit tool calls.
+
+This design solves two problems of the simple agent:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{Bounded context.} The agent only pulls in the prior outputs it actually needs, instead of receiving them all on every call.
+  \item \textbf{Heavy outputs.} Writing a tool can persist a CSV or markdown file to disk, record its path in \texttt{context.json}, and return control to the model. The simple agent could only produce a single text blob per step.
+\end{itemize}
+
+\subsection{Package layout}
+
+\begin{lstlisting}
+2-langchain-agent-with-tools/
+|-- agent.py        (Pipeline runner and per-step agent loop)
+|-- tools.py        (Three @tool functions: read input, read step, write step)
+|-- utils.py        (Loads config.yaml, exposes PIPELINE_DIR)
++-- config.yaml     (Points at the use-case directory to run)
+\end{lstlisting}
+
+Splitting tools into their own module keeps \texttt{agent.py} focused on the agent lifecycle and makes the tools easy to unit-test or reuse from a different runner.
+
+\subsection{Configuration — \texttt{config.yaml} and \texttt{utils.py}}
+
+\begin{lstlisting}[language={}]
+use_case_dir: use-cases/2-quarterly-report-with-tools
+\end{lstlisting}
+
+Rather than taking the pipeline path from \texttt{sys.argv}, this agent reads it from a YAML file next to the script:
+
+\begin{lstlisting}[style=pythonstyle]
+from pathlib import Path
+
+import yaml
+
+
+def load_config() -> dict:
+    config_path = Path(__file__).parent / "config.yaml"
+    return yaml.safe_load(config_path.read_text())
+
+
+PIPELINE_DIR: Path = (
+    Path(__file__).parent.parent / load_config()["use_case_dir"]
+).resolve()
+\end{lstlisting}
+
+\texttt{PIPELINE\_DIR} is computed once at import time and reused everywhere (tools, runner). The path is resolved relative to the repository root — \texttt{Path(\_\_file\_\_).parent.parent} climbs from \texttt{utils.py} up to \texttt{2-langchain-agent-with-tools/}, then up to the repo root, and joins the configured use-case directory.
+
+\begin{notebox}
+Centralising the pipeline path into a module-level constant means both \texttt{agent.py} and \texttt{tools.py} see the exact same directory without passing it around. The trade-off is that running a different pipeline requires editing \texttt{config.yaml} rather than passing a CLI argument.
+\end{notebox}
+
+\subsection{Tools — \texttt{tools.py}}
+
+The agent is given three tools. They are plain Python functions decorated with LangChain's \texttt{@tool}, which turns them into structured tool definitions the model can call by name.
+
+\subsubsection{The context.json schema}
+
+Before the tool code, note the schema that the tools read from and write to. \texttt{context.json} maps each step directory to a \textit{list} of named outputs. This is richer than the simple agent's flat "one output per step" format — a single step can now produce multiple CSV files plus a text summary, for example.
+
+\begin{lstlisting}[language={}]
+{
+  "step_01_data_structuring": [
+    {
+      "name": "revenue_by_product_line",
+      "output_type": "file",
+      "content": "/abs/path/to/revenue.csv",
+      "description": "..."
+    },
+    {
+      "name": "validation_notes",
+      "output_type": "text",
+      "content": "No discrepancies found.",
+      "description": "..."
+    }
+  ]
+}
+\end{lstlisting}
+
+\subsubsection{Imports and paths}
+
+\begin{lstlisting}[style=pythonstyle]
+import json
+from pathlib import Path
+from typing import Optional
+
+from langchain_core.tools import tool
+
+from utils import PIPELINE_DIR
+
+
+CONTEXT_PATH = str(PIPELINE_DIR / "context.json")
+INPUT_DATA_PATH = str(PIPELINE_DIR / "input_data.md")
+\end{lstlisting}
+
+Two module-level constants anchor every tool to the same files. Because they are derived from \texttt{PIPELINE\_DIR}, switching pipelines is still a single-line change in \texttt{config.yaml}.
+
+\subsubsection{Tool 1 — \texttt{read\_input\_data}}
+
+\begin{lstlisting}[style=pythonstyle]
+@tool
+def read_input_data() -> str:
+    """Read the raw input data provided at the start of this pipeline run.
+
+    Returns:
+        The full contents of input_data.md, or an error message if missing.
+    """
+    path = Path(INPUT_DATA_PATH)
+    if not path.exists():
+        return f"Error: input data file not found at {path}"
+    return path.read_text()
+\end{lstlisting}
+
+The docstring matters: LangChain uses it verbatim as the tool description that the model sees when deciding which tool to call. The first line should be a short imperative sentence; the \texttt{Returns:} block tells the model what shape to expect back.
+
+\texttt{input\_data.md} is not automatically injected into every step's prompt (unlike the simple agent). Instead, the step must explicitly \textbf{ask} for it with \texttt{read\_input\_data}. This is the right trade-off: step 1 almost always needs it, but step 4 (say, narrative drafting) usually doesn't — it just needs step 2's analysis.
+
+\subsubsection{Tool 2 — \texttt{read\_step\_output}}
+
+\begin{lstlisting}[style=pythonstyle]
+@tool
+def read_step_output(step_number: int) -> str:
+    """Read all outputs produced by a completed pipeline step.
+
+    Returns every named output for that step concatenated into a single
+    block, with a header line identifying each output's name and type.
+
+    Args:
+        step_number: 1-based step number (e.g. 1 for the first step).
+    """
+    context_path = Path(CONTEXT_PATH)
+    if not context_path.exists():
+        return f"Error: context file not found at {context_path}"
+
+    context = json.loads(context_path.read_text())
+
+    step_key = next(
+        (k for k in sorted(context.keys())
+         if k.startswith(f"step_{step_number:02d}_")),
+        None,
+    )
+    if step_key is None:
+        available = ", ".join(sorted(context.keys())) or "none"
+        return (
+            f"Error: step {step_number} not found. "
+            f"Steps with outputs so far: {available}"
+        )
+
+    outputs = context[step_key]
+    if not outputs:
+        return f"Step {step_key} has no outputs yet."
+
+    sections = []
+    for entry in outputs:
+        name = entry["name"]
+        output_type = entry.get("output_type", "text")
+        header = f"### {name} ({output_type})"
+
+        if output_type == "text":
+            sections.append(f"{header}\n{entry['content']}")
+
+        elif output_type == "file":
+            file_path = Path(entry["content"])
+            if not file_path.exists():
+                sections.append(f"{header}\nError: file not found at {file_path}")
+            elif file_path.suffix not in {".txt", ".csv", ".md"}:
+                sections.append(f"{header}\nError: unsupported file type")
+            else:
+                sections.append(f"{header}\n{file_path.read_text()}")
+
+        else:
+            sections.append(f"{header}\nError: unknown output_type")
+
+    return "\n\n".join(sections)
+\end{lstlisting}
+
+Three things worth pointing out:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{Argument is a step number, not a directory name.} The model sees a clean integer interface (\texttt{step\_number=2}) and the tool resolves that to the actual directory name via \texttt{step\_\{step\_number:02d\}\_} prefix matching.
+  \item \textbf{Files are inlined transparently.} If an entry is a \texttt{file} output, the tool opens the file and returns its content directly in the response, so from the model's perspective it always just "reads a step". It never has to know whether the prior output was stored as text or on disk.
+  \item \textbf{Graceful errors.} Missing steps, missing files, and unsupported extensions all return descriptive strings rather than raising. The model sees the error and can recover (e.g. by asking a different step number).
+\end{itemize}
+
+\subsubsection{Tool 3 — \texttt{write\_step\_output}}
+
+\begin{lstlisting}[style=pythonstyle]
+def _resolve_step_dir(step_number: int) -> Optional[Path]:
+    """Return the step directory for the given 1-based step number."""
+    prefix = f"step_{step_number:02d}_"
+    return next(
+        (d for d in sorted(PIPELINE_DIR.iterdir())
+         if d.is_dir() and d.name.startswith(prefix)),
+        None,
+    )
+
+
+@tool
+def write_step_output(
+    step_number: int,
+    output_name: str,
+    content_type: str,
+    content: str,
+    filename: Optional[str] = None,
+) -> str:
+    """Append one named output to a pipeline step's output list.
+
+    Call this once per output - multiple calls produce multiple outputs
+    for the same step (e.g. one CSV per table).
+
+    Args:
+        step_number: 1-based step number.
+        output_name: Label for this output.
+        content_type: Either 'text' or 'file'.
+        content: The content to store.  For 'text', stored directly.  For
+            'file', written to disk and the path recorded in context.json.
+        filename: Required when content_type is 'file'.
+    """
+    if not output_name:
+        return "Error: output_name must not be empty."
+
+    if content_type not in {"text", "file"}:
+        return f"Error: unsupported content_type '{content_type}'."
+
+    step_dir = _resolve_step_dir(step_number)
+    if step_dir is None:
+        return f"Error: no directory found for step {step_number}"
+
+    step_key = step_dir.name
+    context_path = Path(CONTEXT_PATH)
+    context = (
+        json.loads(context_path.read_text())
+        if context_path.exists()
+        else {}
+    )
+
+    if step_key not in context:
+        context[step_key] = []
+
+    if content_type == "text":
+        entry = {
+            "name": output_name,
+            "output_type": "text",
+            "content": content,
+            "description": f"{output_name} output of {step_key}",
+        }
+
+    else:  # file
+        if not filename:
+            return "Error: 'filename' required when content_type is 'file'."
+        file_path = step_dir / filename
+        if file_path.suffix not in {".txt", ".csv", ".md"}:
+            return f"Error: unsupported file type '{file_path.suffix}'"
+        file_path.write_text(content)
+        entry = {
+            "name": output_name,
+            "output_type": "file",
+            "content": str(file_path),
+            "description": f"{output_name} output of {step_key}",
+        }
+
+    context[step_key].append(entry)
+    context_path.write_text(json.dumps(context, indent=2))
+    return f"OK: '{output_name}' appended to {step_key}"
+\end{lstlisting}
+
+\texttt{write\_step\_output} is the only way for a step to persist anything. A few design decisions worth calling out:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{One call per output.} The tool \textit{appends} to the step's output list. If a step produces three CSVs, the model calls \texttt{write\_step\_output} three times — each with a distinct \texttt{output\_name} and \texttt{filename}. This keeps each call simple and the audit trail explicit.
+  \item \textbf{\texttt{content} overloaded by \texttt{content\_type}.} For text outputs, \texttt{content} is stored verbatim in \texttt{context.json}. For file outputs, \texttt{content} is written to disk and the \textit{path} is stored instead. This mirrors the read tool, so text and file outputs feel symmetric from the model's point of view.
+  \item \textbf{Whitelist on file extensions.} Only \texttt{.txt}, \texttt{.csv}, and \texttt{.md} are allowed. This is defence-in-depth against a model hallucinating a filename like \texttt{report.exe} or an unexpected path.
+\end{itemize}
+
+\subsection{The runner — \texttt{agent.py}}
+
+\subsubsection{The system prompt}
+
+\begin{lstlisting}[style=pythonstyle]
+SYSTEM_PROMPT = """\
+You are an AI assistant executing one step of a multi-step data pipeline.
+
+## Pipeline Overview
+{pipeline_md}
+
+## Your Current Step: {step_name}  (step_number={step_number})
+
+### Spec
+{spec}
+
+### Required Output Format
+{output_format}
+
+---
+
+## Instructions
+1. Decide whether you need outputs from any previous steps. If so, use
+   read_step_output to fetch them (you may call it multiple times).
+2. Produce the output described in the spec and output format above.
+3. Call write_step_output to persist your result. Do NOT finish without writing.
+4. Once all outputs are written, reply with a short confirmation message."""
+\end{lstlisting}
+
+The prompt is a template with five named slots (\texttt{pipeline\_md}, \texttt{step\_name}, \ldots). Those slots are filled in later via \texttt{ChatPromptTemplate.partial(\ldots)}. Note the explicit \textbf{imperative} instructions at the bottom: without them, the model will often describe what it \textit{would} do without actually calling the tools.
+
+\subsubsection{Discovering steps}
+
+\begin{lstlisting}[style=pythonstyle]
+def discover_steps(pipeline_dir: Path) -> list[Path]:
+    return sorted(
+        d for d in pipeline_dir.iterdir()
+        if d.is_dir() and d.name.startswith("step_")
+    )
+
+
+def read_file(path: Path) -> str:
+    return path.read_text() if path.exists() else ""
+\end{lstlisting}
+
+Identical to the simple agent: steps are just sorted \texttt{step\_*} subdirectories.
+
+\subsubsection{Running a single step}
+
+\begin{lstlisting}[style=pythonstyle]
+def run_step(step_dir: Path, pipeline_md: str, llm: ChatOllama) -> None:
+    step_number = int(step_dir.name.split("_")[1])
+    step_name = step_dir.name
+
+    print(f"\n[{step_name}] starting ...")
+
+    spec = read_file(step_dir / "spec.md")
+    output_format = read_file(step_dir / "output.md")
+
+    tools = [read_input_data, read_step_output, write_step_output]
+
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", SYSTEM_PROMPT),
+        ("human", "{input}"),
+        ("placeholder", "{agent_scratchpad}"),
+    ]).partial(
+        pipeline_md=pipeline_md,
+        step_name=step_name,
+        step_number=step_number,
+        spec=spec,
+        output_format=output_format,
+    )
+
+    agent = create_tool_calling_agent(llm, tools, prompt)
+    executor = AgentExecutor(
+        agent=agent,
+        tools=tools,
+        verbose=True,
+        max_iterations=20,
+    )
+
+    executor.invoke({"input": f"Execute step {step_number} now."})
+    print(f"[{step_name}] done")
+\end{lstlisting}
+
+This is the big difference from the simple agent: every step instantiates a fresh agent loop.
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{\texttt{ChatPromptTemplate.from\_messages([...])}} defines the skeleton: a system message, a single human message, and a special \texttt{agent\_scratchpad} placeholder where LangChain injects the ongoing tool-call / tool-result history.
+  \item \textbf{\texttt{.partial(\ldots)}} fills in the static slots (pipeline, spec, output format) up front so that only \texttt{input} and \texttt{agent\_scratchpad} remain for the runtime.
+  \item \textbf{\texttt{create\_tool\_calling\_agent(llm, tools, prompt)}} wires the LLM, the tools, and the prompt into an \textit{agent} — a callable that on each iteration produces either tool calls or a final answer.
+  \item \textbf{\texttt{AgentExecutor}} drives the agent in a loop: feed the agent, dispatch any tool calls, feed the results back, repeat. \texttt{max\_iterations=20} is a safety valve; the comment in the source pegs this at roughly "a few reads + a few writes + reasoning headroom".
+  \item \textbf{\texttt{verbose=True}} streams every tool call and response to stdout, which is invaluable while iterating on \texttt{spec.md}.
+\end{itemize}
+
+The \texttt{executor.invoke(\{"input": "Execute step N now."\})} call kicks off the loop. Return value is ignored — all real output is persisted through \texttt{write\_step\_output}.
+
+\subsubsection{Running the pipeline}
+
+\begin{lstlisting}[style=pythonstyle]
+def run_pipeline(pipeline_dir: str) -> None:
+    root = Path(pipeline_dir).resolve()
+    pipeline_md = read_file(root / "pipeline.md")
+    steps = discover_steps(root)
+
+    if not steps:
+        print("No step directories found.")
+        return
+
+    print(f"Pipeline : {root.name}")
+    print(f"Steps    : {[s.name for s in steps]}")
+
+    context_path = root / "context.json"
+    context_path.write_text("{}")
+    print("Cleared  : context.json")
+
+    llm = ChatOllama(model="gemma4", num_ctx=65536, temperature=0)
+
+    for step_dir in steps:
+        run_step(step_dir, pipeline_md, llm)
+
+    print(f"\nPipeline complete. Results in {root / 'context.json'}")
+\end{lstlisting}
+
+The top-level loop is intentionally thin. Two things to note:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{\texttt{context.json} is wiped at the start of each run.} That guarantees a clean slate — the tools all append, so stale entries from a previous run would otherwise accumulate.
+  \item \textbf{A single \texttt{llm} instance is reused.} Each step builds its own prompt and executor, but the underlying model connection is shared, which is much faster than reconnecting per step.
+\end{itemize}
+
+\subsubsection{Entry point}
+
+\begin{lstlisting}[style=pythonstyle]
+def main():
+    if not PIPELINE_DIR.is_dir():
+        print(f"Error: '{PIPELINE_DIR}' is not a directory")
+        return
+    run_pipeline(str(PIPELINE_DIR))
+
+
+if __name__ == "__main__":
+    main()
+\end{lstlisting}
+
+No CLI arguments — the pipeline path comes from \texttt{config.yaml} via \texttt{PIPELINE\_DIR}. Switching to a different pipeline is a one-line edit in \texttt{config.yaml}, then:
+
+\begin{lstlisting}[style=shellstyle]
+python 2-langchain-agent-with-tools/agent.py
+\end{lstlisting}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Comparing the Two Agents}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\begin{table}[h]
+\centering
+\renewcommand{\arraystretch}{1.4}
+\begin{tabularx}{\textwidth}{lXX}
+\toprule
+\textbf{Aspect} & \textbf{Agent 1 (simple)} & \textbf{Agent 2 (tools)} \\
+\midrule
+Per-step LLM calls & 1 & Many (tool-call loop) \\
+Tool calls         & None & \texttt{read\_input\_data}, \texttt{read\_step\_output}, \texttt{write\_step\_output} \\
+Context injection  & All prior outputs, always & Only what the model asks for \\
+Outputs per step   & One text blob & Any number, text \textit{or} file \\
+State on disk      & \texttt{context.json} + \texttt{final\_report.md} & \texttt{context.json} + per-step files \\
+Configuration      & CLI argument & \texttt{config.yaml} \\
+Best for           & Small, linear pipelines; debugging prompts & Real pipelines with heavy outputs; branching data dependencies \\
+\bottomrule
+\end{tabularx}
+\caption{When to reach for each reference implementation}
+\end{table}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Troubleshooting}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{Ollama connection errors}
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{``connection refused''.} The Ollama daemon is not running. Start it with \texttt{ollama serve}.
+  \item \textbf{``model not found''.} You haven't pulled the model. Run \texttt{ollama pull gemma4} (or the model name you configured).
+\end{itemize}
+
+\subsection{The tool-calling agent stops without writing}
+
+\begin{itemize}[leftmargin=1.5em]
+  \item The model you are using may not support tool calling. Switch to a model whose Ollama tags list "tools" (for example \texttt{llama3.1}, \texttt{qwen2.5}).
+  \item Increase \texttt{max\_iterations} in \texttt{AgentExecutor} if a complex step genuinely needs more tool calls than the default 20 allow.
+\end{itemize}
+
+\subsection{Output is wrapped in backticks or prose preamble}
+
+This is a classic symptom of a weak system prompt. Strengthen the closing instruction in \texttt{build\_system\_prompt} (simple agent) or the step's \texttt{output.md} example (either agent). Concrete examples in \texttt{output.md} outperform adjectives like "concise" every time.
+
+\subsection{Context window overflow}
+
+\begin{itemize}[leftmargin=1.5em]
+  \item For the simple agent: reduce verbosity in earlier steps' \texttt{output.md} examples, or raise \texttt{num\_ctx} on \texttt{ChatOllama}.
+  \item For the tool-calling agent: this is usually a symptom of the model deciding to read every prior step when it only needs one. Sharpen the step's \texttt{spec.md} so the dependency is explicit, e.g. "Read the output of step 2 only."
+\end{itemize}
+
+\end{document}

@@ -1,0 +1,961 @@
+\documentclass[12pt, a4paper]{article}
+
+% ─── Packages ────────────────────────────────────────────────────────────────
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{fancyhdr}
+\usepackage{mdframed}
+\usepackage{parskip}
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{fontawesome5}
+
+% ─── Colours ─────────────────────────────────────────────────────────────────
+\definecolor{primary}{HTML}{1D9E75}
+\definecolor{secondary}{HTML}{534AB7}
+\definecolor{accent}{HTML}{BA7517}
+\definecolor{codebg}{HTML}{F5F5F0}
+\definecolor{codeborder}{HTML}{D3D1C7}
+\definecolor{notebg}{HTML}{E1F5EE}
+\definecolor{noteborder}{HTML}{0F6E56}
+\definecolor{warnbg}{HTML}{FAEEDA}
+\definecolor{warnborder}{HTML}{854F0B}
+\definecolor{darktext}{HTML}{2C2C2A}
+\definecolor{mutedtext}{HTML}{5F5E5A}
+
+% ─── Hyperref ────────────────────────────────────────────────────────────────
+\hypersetup{
+  colorlinks=true,
+  linkcolor=secondary,
+  urlcolor=primary,
+  citecolor=primary,
+  pdftitle={Modular Agentic Pipeline — Design Guide},
+  pdfauthor={},
+}
+
+% ─── Typography ──────────────────────────────────────────────────────────────
+\titleformat{\section}{\Large\bfseries\color{darktext}}{}{0em}{}[\color{primary}\titlerule]
+\titleformat{\subsection}{\large\bfseries\color{darktext}}{}{0em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{mutedtext}}{}{0em}{}
+
+\titlespacing{\section}{0pt}{2em}{0.8em}
+\titlespacing{\subsection}{0pt}{1.4em}{0.4em}
+\titlespacing{\subsubsection}{0pt}{1em}{0.3em}
+
+% ─── Code listings ───────────────────────────────────────────────────────────
+\lstdefinestyle{filestyle}{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small\color{darktext},
+  breaklines=true,
+  breakatwhitespace=false,
+  frame=single,
+  rulecolor=\color{codeborder},
+  framesep=8pt,
+  xleftmargin=8pt,
+  xrightmargin=8pt,
+  aboveskip=0.8em,
+  belowskip=0.8em,
+  showstringspaces=false,
+  tabsize=2,
+}
+\lstset{style=filestyle}
+
+% ─── Custom environments ─────────────────────────────────────────────────────
+\newmdenv[
+  backgroundcolor=notebg,
+  linecolor=noteborder,
+  linewidth=3pt,
+  topline=false,
+  bottomline=false,
+  rightline=false,
+  innerleftmargin=12pt,
+  innerrightmargin=12pt,
+  innertopmargin=8pt,
+  innerbottommargin=8pt,
+]{notebox}
+
+\newmdenv[
+  backgroundcolor=warnbg,
+  linecolor=warnborder,
+  linewidth=3pt,
+  topline=false,
+  bottomline=false,
+  rightline=false,
+  innerleftmargin=12pt,
+  innerrightmargin=12pt,
+  innertopmargin=8pt,
+  innerbottommargin=8pt,
+]{warnbox}
+
+% ─── Header / Footer ─────────────────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{mutedtext}Modular Agentic Pipeline — Design Guide}
+% \fancyhead[R]{\small\color{mutedtext}\leftmark}
+\fancyfoot[C]{\small\color{mutedtext}\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{codeborder}\leaders\hrule height \headrulewidth\hfill}}
+
+% ─── Document ─────────────────────────────────────────────────────────────────
+\begin{document}
+
+% ── Title page ────────────────────────────────────────────────────────────────
+\begin{titlepage}
+  \centering
+  \vspace*{3cm}
+  {\color{primary}\rule{\linewidth}{2pt}}
+  \vspace{1cm}
+
+  {\Huge\bfseries\color{darktext} Modular Agentic Pipeline}\\[0.5em]
+  {\Large\color{mutedtext} Design Guide \& Reference}
+
+  \vspace{1cm}
+  {\color{primary}\rule{\linewidth}{2pt}}
+
+  \vspace{2cm}
+  {\large\color{mutedtext}
+    A framework for building AI-powered, multi-step pipelines\\
+    using plain-English specifications and a shared MCP toolset.
+  }
+
+  \vfill
+  {\small\color{mutedtext} Version 1.0}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Introduction}
+% ══════════════════════════════════════════════════════════════════════════════
+
+This guide describes a framework for building modular, multi-step AI agent pipelines. The core idea is simple: complex tasks — generating a quarterly business report, producing a podcast, drafting a research brief — can be broken down into a sequence of discrete steps. Each step lives in its own directory, is described entirely in plain English, and is executed by an AI agent that has access to a shared set of tools via an MCP (Model Context Protocol) server.
+
+The framework is designed to be:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{Non-technical.} Specifications are written in plain English markdown files. No code, no tool definitions, no programmatic logic. Anyone can author or modify a pipeline.
+  \item \textbf{Modular.} Each step is self-contained. Steps can be added, removed, or reordered by simply changing the directory structure.
+  \item \textbf{Auditable.} A central \texttt{context.json} file records the output of every step as the pipeline runs, giving a full execution trail.
+  \item \textbf{General-purpose.} The same runner and the same conventions apply to any pipeline — from financial reporting to media production.
+\end{itemize}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Core Concepts}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{The Pipeline Runner}
+
+The pipeline runner is the agent (for example, an Amazon Bedrock agent or equivalent) that executes the pipeline. It is given a single input: the path to a \textbf{root directory}. From there it:
+
+\begin{enumerate}[leftmargin=1.5em]
+  \item Reads \texttt{pipeline.md} in the root directory for an overview of the task.
+  \item Reads \texttt{input\_data.md} to obtain the raw input for this run.
+  \item Discovers all step subdirectories in alphabetical/numerical order.
+  \item For each step, reads \texttt{spec.md} and \texttt{output.md}.
+  \item Executes the step using its own reasoning and any required MCP tools.
+  \item Records the step's output in \texttt{context.json}.
+  \item Moves to the next step, passing the previous step's output (and, if needed, \texttt{input\_data.md}) as context.
+\end{enumerate}
+
+\begin{notebox}
+\textbf{Key principle:} The agent decides \textit{how} to accomplish each step. The specification files describe \textit{what} needs to be done and \textit{what the output should look like} — never which tools to call or which code to run. Tool selection is entirely the agent's responsibility.
+\end{notebox}
+
+\subsection{The MCP Server}
+
+All tools available to the agent — file reading, web search, data queries, audio generation, image rendering, and so on — are provided through a single MCP server. The specification files never mention tools by name. This keeps specifications stable even as the toolset evolves.
+
+\subsection{State and Context}
+
+State flows between steps through two mechanisms:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{Heavy outputs} (CSV files, images, markdown documents, \LaTeX\ files) are written to disk inside the step's own directory. Their file paths are recorded in \texttt{context.json}.
+  \item \textbf{Light outputs} (short summaries, key metrics, brief structured results) are written directly as text content into \texttt{context.json}.
+\end{itemize}
+
+In both cases, \texttt{context.json} is the single source of truth. Each step looks at the previous entry in \texttt{context.json} to find its input. If the entry has \texttt{"output\_type": "file"}, the agent uses its file-reading tool to retrieve the content. If it has \texttt{"output\_type": "text"}, the content is read directly.
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Directory Structure}
+% ══════════════════════════════════════════════════════════════════════════════
+
+Every pipeline follows the same layout. The root directory contains one markdown file and any number of step subdirectories, named with a numeric prefix to define their order.
+
+\begin{lstlisting}
+my_pipeline/
+|-- pipeline.md    (Overview and agent-level instructions)
+|-- input_data.md  (Raw input data for this pipeline run)
+|-- context.json   (Written at runtime; tracks all outputs)
+|
+|-- step_01_<name>/
+|   |-- spec.md    (Objective + guidelines for this step)
+|   +-- output.md  (Expected output format + example)
+|
+|-- step_02_<name>/
+|   |-- spec.md
+|   +-- output.md
+|
++-- step_N_<name>/
+    |-- spec.md
+    +-- output.md
+\end{lstlisting}
+
+\begin{warnbox}
+Step directories must be named with a numeric prefix (\texttt{step\_01\_}, \texttt{step\_02\_}, etc.) so that the agent discovers them in the correct order regardless of the operating system's directory sorting behaviour.
+\end{warnbox}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{File Specifications}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{\texttt{pipeline.md} — Pipeline overview}
+
+This file sits at the root of the pipeline directory. It serves two purposes: giving the agent a high-level understanding of the task, and providing standing instructions that apply across all steps.
+
+\textbf{Sections to include:}
+
+\begin{itemize}[leftmargin=1.5em]
+  \item A one-paragraph description of what this pipeline produces.
+  \item The intended audience or use case for the output.
+  \item Standing agent instructions, including how to read \texttt{context.json} and what to do when an output is a file vs.\ text.
+\end{itemize}
+
+\textbf{Template:}
+
+\begin{lstlisting}[language={}]
+# Pipeline: <Name>
+
+## Overview
+<One paragraph describing what this pipeline does and what it produces.>
+
+## Audience
+<Who will use or read the final output? What is their level of expertise?>
+
+## Agent Instructions
+- Before starting each step, read `context.json` in this directory.
+- Find the entry for the most recently completed step.
+- If its `output_type` is `"file"`, use your file-reading tool to retrieve
+  the content at the given `file_path` before proceeding.
+- If its `output_type` is `"text"`, the content is available directly in
+  the `content` field.
+- After completing each step, update `context.json` with the step's output
+  before moving on.
+\end{lstlisting}
+
+\subsection{\texttt{input\_data.md} — Raw input data}
+
+This file sits at the root of the pipeline directory alongside \texttt{pipeline.md}. It holds the \textbf{raw input} that the pipeline will operate on for this particular run: the numbers, tables, facts, or text that the first step needs to get started.
+
+Unlike \texttt{pipeline.md}, which describes the task in general terms and rarely changes, \texttt{input\_data.md} changes every time you run the pipeline with new data. It is the only file a non-technical user needs to edit between runs.
+
+\begin{notebox}
+\textbf{Why a dedicated input file?} Separating the \textit{data} from the \textit{specification} means the pipeline definition stays stable across runs. To produce a Q4 report instead of a Q3 report, you only need to replace \texttt{input\_data.md} — not touch any \texttt{spec.md} or \texttt{output.md}. This keeps pipelines reusable and version-controllable.
+\end{notebox}
+
+\textbf{What to include:}
+
+\begin{itemize}[leftmargin=1.5em]
+  \item Any raw figures, tables, or facts the pipeline must operate on.
+  \item Contextual metadata such as the reporting period, company name, or subject identifier.
+  \item Free-form notes or caveats the agent should be aware of at the start of the run.
+\end{itemize}
+
+\textbf{How the pipeline uses it.} The first step of any pipeline receives \texttt{input\_data.md} as its primary input. Subsequent steps typically consume the output of the previous step rather than the raw data directly, though the agent can always re-read \texttt{input\_data.md} if its tools allow it (see the tool-calling agent in the code-explanation guide).
+
+\textbf{Template:}
+
+\begin{lstlisting}[language={}]
+# Input Data: <Pipeline Name>
+
+## <Context section>
+- **<Field>:** <Value>
+- **<Field>:** <Value>
+
+## <Data section>
+| Column A | Column B | Column C |
+|---|---|---|
+| ...      | ...      | ...      |
+
+## <Additional notes>
+<Any caveats or context relevant to this run.>
+\end{lstlisting}
+
+\begin{warnbox}
+If \texttt{input\_data.md} is missing or empty, the first step has nothing to work with and the pipeline will either fail or produce a useless output. Always confirm this file is present and populated before running the pipeline.
+\end{warnbox}
+
+\subsection{\texttt{spec.md} — Step specification}
+
+Every step directory contains a \texttt{spec.md} file. This is the primary instruction document for the agent for that step. It has two sections.
+
+\textbf{Section 1 — Objective:} A concise statement of what this step must accomplish. One to three sentences. Think of it as the brief a manager would give to a team member.
+
+\textbf{Section 2 — Guidelines:} Detailed instructions, constraints, quality standards, edge cases, and anything else the agent must know to execute the step correctly. This is where the nuance lives.
+
+\textbf{Template:}
+
+\begin{lstlisting}[language={}]
+# Step <N>: <Name>
+
+## Objective
+<One to three sentences describing what this step must produce.
+Be specific about the subject matter, not about tools or methods.>
+
+## Guidelines
+- <Guideline 1: a specific instruction, constraint, or quality standard.>
+- <Guideline 2>
+- <Guideline 3>
+- <Add as many as needed. Each guideline should be a single, actionable
+  statement. Avoid vague language like "ensure quality" - be concrete.>
+\end{lstlisting}
+
+\subsection{\texttt{output.md} — Output format and example}
+
+Every step directory also contains an \texttt{output.md} file. This tells the agent exactly what its deliverable should look like. It has two sections.
+
+\textbf{Section 1 — Output format:} Describes the structure, type, and any naming conventions for the output. Should the agent produce a CSV? A markdown document? A JSON object? A set of image files? State the format unambiguously.
+
+\textbf{Section 2 — Example:} A concrete example of what a correct output looks like for this step. The example does not need to use real data — placeholder values are fine — but it must accurately represent the expected structure and level of detail.
+
+\textbf{Template:}
+
+\begin{lstlisting}[language={}]
+# Output: Step <N>
+
+## Format
+- **Type:** <file | text>
+- **File name (if type is file):** `<filename.ext>`
+- **Structure:** <Describe the structure. For text, describe the sections
+  or fields. For a file, describe columns, headings, or schema.>
+
+## Example
+<Provide a realistic example of what the output should look like.
+For a CSV, show a few rows. For a markdown document, show the first
+section. For a JSON object, show a populated sample.>
+\end{lstlisting}
+
+\subsection{\texttt{context.json} — Runtime state}
+
+This file is written and updated by the agent at runtime. It is not authored by the pipeline designer. However, understanding its structure helps when writing \texttt{spec.md} guidelines that reference previous steps.
+
+\textbf{Structure:}
+
+\begin{lstlisting}[language={}]
+{
+  "step_01_<name>": {
+    "output_type": "file",
+    "file_path": "step_01_<name>/output.csv",
+    "description": "Short human-readable description of what this file contains."
+  },
+  "step_02_<name>": {
+    "output_type": "text",
+    "content": "The full text content of the output goes here.",
+    "description": "Short description of what this text represents."
+  }
+}
+\end{lstlisting}
+
+Each key matches the step directory name. The \texttt{output\_type} field is either \texttt{"file"} or \texttt{"text"}. For file outputs, \texttt{file\_path} gives the relative path from the pipeline root. For text outputs, \texttt{content} holds the full text directly.
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Writing Good Specifications}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{Guidelines for \texttt{spec.md}}
+
+The quality of the agent's output depends heavily on the quality of the specification. Here are principles to follow when writing \texttt{spec.md} files:
+
+\textbf{Be specific about what, not how.}
+Write ``Gather quarterly revenue figures broken down by product line and region'' rather than ``Query the database and export a CSV.'' The agent chooses its own methods.
+
+\textbf{State constraints explicitly.}
+If something must not appear in the output, say so. ``Do not include individual customer names or personally identifiable information.'' Agents tend to include things unless told otherwise.
+
+\textbf{Define quality standards in measurable terms.}
+``Ensure the summary is no longer than 400 words'' is better than ``keep it concise.'' ``Flag any line item where the quarter-on-quarter change exceeds 10\%'' is better than ``look for anomalies.''
+
+\textbf{Reference previous step outputs when relevant.}
+If this step depends on what a previous step produced, say so explicitly: ``Using the financial dataset from the previous step, identify the three highest-growth product categories.''
+
+\textbf{Keep guidelines atomic.}
+Each bullet point should contain one instruction. Compound instructions (``gather data and validate it and flag errors'') are harder for the agent to track. Break them apart.
+
+\subsection{Guidelines for \texttt{output.md}}
+
+\textbf{Name the file explicitly.}
+Don't say ``produce a CSV file.'' Say ``produce a file named \texttt{output.csv}.'' Consistent naming makes it easy to reference outputs in later steps.
+
+\textbf{Show, don't just describe.}
+The example section is the most important part of \texttt{output.md}. A well-constructed example communicates structure, level of detail, and tone more efficiently than any description. When in doubt, make the example longer and more complete.
+
+\textbf{Match the example to the guidelines.}
+If your \texttt{spec.md} says ``flag discrepancies,'' your example in \texttt{output.md} should show what a flagged discrepancy looks like in the output.
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Worked Example: Quarterly Report Pipeline}
+% ══════════════════════════════════════════════════════════════════════════════
+
+The following is a complete, ready-to-use example of a five-step pipeline that generates a quarterly business report. All file contents are shown in full. This example can be used as a template or starting point for your own pipelines.
+
+\subsection{Directory structure}
+
+\begin{lstlisting}
+quarterly_report/
+|-- pipeline.md
+|-- input_data.md
+|-- context.json                        (written at runtime)
+|-- step_01_data_gathering/
+|   |-- spec.md
+|   +-- output.md
+|-- step_02_analysis/
+|   |-- spec.md
+|   +-- output.md
+|-- step_03_narrative/
+|   |-- spec.md
+|   +-- output.md
+|-- step_04_visualizations/
+|   |-- spec.md
+|   +-- output.md
++-- step_05_pdf_generation/
+    |-- spec.md
+    +-- output.md
+\end{lstlisting}
+
+\subsection{\texttt{pipeline.md}}
+
+\begin{lstlisting}[language={}]
+# Pipeline: Quarterly Business Report
+
+## Overview
+This pipeline produces a polished quarterly business report for company
+leadership. It gathers raw financial and operational data, analyses
+performance against targets and prior quarters, drafts a narrative
+executive summary, generates supporting charts, and compiles everything
+into a LaTeX source file ready for PDF compilation.
+
+## Audience
+Senior leadership and board members. The tone should be professional,
+precise, and data-driven. Assume familiarity with business metrics but
+not with the underlying data systems.
+
+## Agent Instructions
+- Before starting each step, read `context.json` in this directory.
+- Find the entry for the most recently completed step.
+- If its `output_type` is `"file"`, use your file-reading tool to
+  retrieve the content at the given `file_path` before proceeding.
+- If its `output_type` is `"text"`, the content is available directly
+  in the `content` field.
+- After completing each step, update `context.json` with the step's
+  output before moving on.
+- Do not skip steps or reorder them. Each step depends on the output
+  of the previous one.
+\end{lstlisting}
+
+\subsection{\texttt{input\_data.md}}
+
+\begin{lstlisting}[language={}]
+# Input Data: Quarterly Business Report
+
+## Company
+- **Company name:** Acme Corp
+
+## Report Period
+- **Current quarter:** Q3 2025
+- **Comparison quarter:** Q3 2024
+
+## Revenue by Product Line
+| Product Line | Current Quarter (USD) | Prior Year Quarter (USD) |
+|---|---|---|
+| Product Line A | 4,200,000 | 3,800,000 |
+| Product Line B | 1,750,000 | 1,600,000 |
+
+## Revenue by Region
+| Region | Current Quarter (USD) | Prior Year Quarter (USD) |
+|---|---|---|
+| EMEA | 3,100,000 | 2,900,000 |
+| APAC | 2,850,000 | 2,500,000 |
+
+## Operating Expenses by Department
+| Department | Current Quarter (USD) | Prior Year Quarter (USD) |
+|---|---|---|
+| Engineering        |   980,000 |   870,000 |
+| Sales & Marketing  | 1,200,000 | 1,050,000 |
+| General & Admin    |   430,000 |   410,000 |
+
+## Customer Metrics
+| Metric | Current Quarter | Prior Year Quarter |
+|---|---|---|
+| Active customers           | 4,821 | 4,102 |
+| New customers acquired     |   387 |   310 |
+| Churned customers          |    94 |    88 |
+| Net revenue retention (%)  |   112 |   108 |
+\end{lstlisting}
+
+\subsection{Step 1 — Data gathering}
+
+\subsubsection{\texttt{step\_01\_data\_gathering/spec.md}}
+
+\begin{lstlisting}[language={}]
+# Step 1: Data Gathering
+
+## Objective
+Collect all financial and operational data required for this quarter's
+report. The output should be a single structured dataset covering
+revenue, expenses, headcount, and customer metrics, ready for analysis
+in the next step.
+
+## Guidelines
+- Gather revenue figures broken down by product line and by region.
+- Gather total operating expenses broken down by department.
+- Gather headcount figures: total employees at start and end of quarter,
+  new hires, and departures.
+- Gather customer metrics: total active customers, new customers
+  acquired, churned customers, and net revenue retention rate.
+- All figures should cover the current quarter and the same quarter
+  from the prior year, to enable year-on-year comparison.
+- If any data point is unavailable, record it as null and add a note
+  explaining what is missing.
+- Do not include any personally identifiable information. Aggregate
+  only.
+- Validate that revenue figures sum correctly across product lines and
+  regions. If they do not match, flag the discrepancy.
+\end{lstlisting}
+
+\subsubsection{\texttt{step\_01\_data\_gathering/output.md}}
+
+\begin{lstlisting}[language={}]
+# Output: Step 1
+
+## Format
+- **Type:** file
+- **File name:** `output.csv`
+- **Structure:** A CSV file with one row per metric. Columns are:
+  `category`, `subcategory`, `current_quarter`, `prior_year_quarter`,
+  `unit`, `notes`.
+
+## Example
+category,subcategory,current_quarter,prior_year_quarter,unit,notes
+revenue,product_line_A,4200000,3800000,USD,
+revenue,product_line_B,1750000,1600000,USD,
+revenue,region_EMEA,3100000,2900000,USD,
+revenue,region_APAC,2850000,2500000,USD,
+expenses,engineering,980000,870000,USD,
+expenses,sales_and_marketing,1200000,1050000,USD,
+expenses,general_and_admin,430000,410000,USD,
+headcount,total_start_of_quarter,312,287,people,
+headcount,total_end_of_quarter,328,299,people,
+headcount,new_hires,24,18,people,
+headcount,departures,8,6,people,
+customers,active,4821,4102,accounts,
+customers,new_acquired,387,310,accounts,
+customers,churned,94,88,accounts,
+customers,net_revenue_retention,112,108,percent,
+\end{lstlisting}
+
+\subsection{Step 2 — Analysis}
+
+\subsubsection{\texttt{step\_02\_analysis/spec.md}}
+
+\begin{lstlisting}[language={}]
+# Step 2: Analysis
+
+## Objective
+Analyse the dataset from the previous step to identify key performance
+trends, notable achievements, and areas of concern. Produce a structured
+summary of findings that the narrative step can draw from.
+
+## Guidelines
+- Calculate year-on-year percentage change for every metric that has
+  both a current and prior year value.
+- Identify the top two growth areas and the bottom two growth areas by
+  percentage change.
+- Flag any metric where the year-on-year change exceeds 20% in either
+  direction as a significant movement requiring comment.
+- Calculate total revenue and total operating expenses for the quarter,
+  and derive operating profit and operating margin.
+- Calculate customer growth rate and churn rate as percentages.
+- Do not make assumptions about causes. Record what the data shows, not
+  why it may have happened. Narrative interpretation happens in step 3.
+- If any metric was recorded as null in step 1, exclude it from
+  calculations and note the exclusion.
+\end{lstlisting}
+
+\subsubsection{\texttt{step\_02\_analysis/output.md}}
+
+\begin{lstlisting}[language={}]
+# Output: Step 2
+
+## Format
+- **Type:** text
+- **Structure:** A structured markdown-formatted text block with clearly
+  labelled sections for each analysis area. Include a summary table of
+  all year-on-year changes, followed by a flagged items list.
+
+## Example
+## Financial summary
+| Metric                  | Current Q | Prior Y Q | YoY Change |
+|-------------------------|-----------|-----------|------------|
+| Total revenue           | $5.95M    | $5.40M    | +10.2%     |
+| Total operating expenses| $2.61M    | $2.33M    | +12.0%     |
+| Operating profit        | $3.34M    | $3.07M    | +8.8%      |
+| Operating margin        | 56.1%     | 56.9%     | -0.8pp     |
+
+## Top growth areas
+1. Headcount / new hires: +33.3% YoY
+2. Revenue / product line A: +10.5% YoY
+
+## Areas of concern
+1. Expenses / sales and marketing: +14.3% YoY (outpacing revenue growth)
+2. Customer churn: +6.8% YoY
+
+## Flagged items (>20% YoY movement)
+- None this quarter. All movements within normal range.
+
+## Customer metrics
+- Customer growth rate: 9.2%
+- Churn rate: 1.9%
+- Net revenue retention: 112% (+4pp YoY)
+\end{lstlisting}
+
+\subsection{Step 3 — Narrative}
+
+\subsubsection{\texttt{step\_03\_narrative/spec.md}}
+
+\begin{lstlisting}[language={}]
+# Step 3: Narrative
+
+## Objective
+Write a professional executive summary that interprets the analysis from
+the previous step and tells a coherent story about the company's
+performance this quarter. The output is a polished markdown document
+that will be included in the final report.
+
+## Guidelines
+- The executive summary should be between 350 and 500 words.
+- Open with a one-paragraph overview of overall performance.
+- Follow with a paragraph on revenue and profitability.
+- Follow with a paragraph on customer growth and retention.
+- Follow with a paragraph on headcount and operational capacity.
+- Close with a brief outlook paragraph that notes the areas flagged in
+  the analysis as requiring attention, without making forward-looking
+  financial predictions.
+- The tone should be confident, factual, and measured. Avoid superlatives
+  like "exceptional" or "outstanding." Let the numbers speak.
+- Do not include any numbers that were not present in the analysis step.
+  Do not invent context.
+- Use the company name placeholder "[Company]" throughout.
+- Format the document with a title, date placeholder, and clear section
+  headings.
+\end{lstlisting}
+
+\subsubsection{\texttt{step\_03\_narrative/output.md}}
+
+\begin{lstlisting}[language={}]
+# Output: Step 3
+
+## Format
+- **Type:** file
+- **File name:** `executive_summary.md`
+- **Structure:** A markdown file with a title, a date line, and four to
+  five sections, each with a heading. No tables - prose only.
+
+## Example
+# Quarterly Executive Summary
+**Period:** Q3 2025 | **Prepared:** October 2025
+
+## Overview
+[Company] delivered steady growth in Q3 2025, with total revenue reaching
+$5.95 million, a 10.2% increase over the same quarter last year.
+Operating profit grew by 8.8% to $3.34 million, reflecting continued
+investment in sales capacity. Customer retention remained strong, with
+net revenue retention of 112%.
+
+## Revenue and profitability
+Revenue growth was led by Product Line A, which grew 10.5% year-on-year
+to $4.20 million. Operating expenses grew at 12.0%, slightly ahead of
+revenue growth, driven primarily by an increase in sales and marketing
+spend. Operating margin contracted modestly from 56.9% to 56.1%.
+
+## Customer growth and retention
+[Company] ended the quarter with 4,821 active customers, representing
+9.2% growth year-on-year. Net revenue retention of 112% indicates that
+existing customers continue to expand their usage. The quarterly churn
+rate of 1.9% remains within historical norms, though churn volume
+increased 6.8% versus the prior year and warrants monitoring.
+
+## Headcount and capacity
+The company added 24 net new employees during the quarter, ending at
+328 total headcount. This represents 10.4% headcount growth year-on-year,
+broadly in line with revenue growth.
+
+## Areas for attention
+Sales and marketing expense growth of 14.3% outpaced revenue growth of
+10.2% this quarter. Leadership should assess whether current sales
+capacity investments are on track to deliver expected pipeline returns
+in coming quarters.
+\end{lstlisting}
+
+\subsection{Step 4 — Visualizations}
+
+\subsubsection{\texttt{step\_04\_visualizations/spec.md}}
+
+\begin{lstlisting}[language={}]
+# Step 4: Visualizations
+
+## Objective
+Generate a set of charts that visually represent the key findings from
+the analysis step. These charts will be embedded in the final report.
+Also carry forward the executive summary document from step 3 so that
+both are available for the final compilation step.
+
+## Guidelines
+- Produce exactly four charts, described below.
+- Chart 1: A bar chart comparing total revenue and total operating
+  expenses for the current quarter versus the prior year quarter.
+  Title: "Revenue and expenses: current vs. prior year."
+- Chart 2: A bar chart showing year-on-year change (%) for each revenue
+  subcategory (product lines and regions). Title: "Revenue growth by
+  segment."
+- Chart 3: A line or bar chart showing customer metrics: active
+  customers, new customers acquired, and churned customers for the
+  current quarter. Title: "Customer movement this quarter."
+- Chart 4: A single-value display or gauge showing net revenue retention
+  rate versus the prior year. Title: "Net revenue retention."
+- Use a clean, professional colour palette. Avoid decorative elements.
+- Save each chart as a PNG file with the names specified in output.md.
+- After generating the charts, copy or reference the executive summary
+  file path from step 3 so it is available to step 5.
+\end{lstlisting}
+
+\subsubsection{\texttt{step\_04\_visualizations/output.md}}
+
+\begin{lstlisting}[language={}]
+# Output: Step 4
+
+## Format
+- **Type:** file (multiple)
+- **File names:**
+  - `chart_01_revenue_expenses.png`
+  - `chart_02_revenue_growth.png`
+  - `chart_03_customer_movement.png`
+  - `chart_04_net_revenue_retention.png`
+- All files saved in the `step_04_visualizations/` directory.
+- The `context.json` entry for this step should list all four chart
+  paths plus the executive summary path from step 3.
+
+## Example context.json entry
+{
+  "step_04_visualizations": {
+    "output_type": "file",
+    "files": [
+      "step_04_visualizations/chart_01_revenue_expenses.png",
+      "step_04_visualizations/chart_02_revenue_growth.png",
+      "step_04_visualizations/chart_03_customer_movement.png",
+      "step_04_visualizations/chart_04_net_revenue_retention.png",
+      "step_03_narrative/executive_summary.md"
+    ],
+    "description": "Four report charts plus the executive summary."
+  }
+}
+\end{lstlisting}
+
+\subsection{Step 5 — PDF generation}
+
+\subsubsection{\texttt{step\_05\_pdf\_generation/spec.md}}
+
+\begin{lstlisting}[language={}]
+# Step 5: PDF Generation
+
+## Objective
+Compile all outputs from step 4 into a single, well-structured LaTeX
+source file. The output is a `.tex` file that a user can compile with
+a standard LaTeX compiler to produce the final quarterly report PDF.
+
+## Guidelines
+- Read the step 4 output from context.json. It contains five files:
+  four chart images and the executive summary markdown document.
+- Structure the LaTeX document as follows, in this order:
+    1. Title page with report title, quarter, and date
+    2. Table of contents
+    3. Executive summary section (content from executive_summary.md)
+    4. Charts section (all four chart images, each with a caption)
+- Use the `graphicx` package to embed images. Reference chart files
+  using the relative paths recorded in context.json.
+- Use `\section` and `\subsection` headings consistently.
+- Do not introduce any data, figures, or content that does not come
+  from the step 4 files. The executive summary and charts are the
+  complete source material.
+- The document class should be `article` with A4 paper and 2.5cm margins.
+- The output file should be self-contained and compilable with pdflatex.
+\end{lstlisting}
+
+\subsubsection{\texttt{step\_05\_pdf\_generation/output.md}}
+
+\begin{lstlisting}[language={}]
+# Output: Step 5
+
+## Format
+- **Type:** file
+- **File name:** `report.tex`
+- **Structure:** A complete, compilable LaTeX source file.
+
+## Example (abbreviated structure)
+\documentclass[12pt, a4paper]{article}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{hyperref}
+
+\title{Quarterly Business Report \\ Q3 2025}
+\date{October 2025}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+\section{Executive Summary}
+% Content from executive_summary.md goes here, converted to LaTeX prose.
+
+\section{Charts}
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.85\textwidth]
+  {step_04_visualizations/chart_01_revenue_expenses.png}
+\caption{Revenue and expenses: current vs.\ prior year}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.85\textwidth]
+  {step_04_visualizations/chart_02_revenue_growth.png}
+\caption{Revenue growth by segment}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.85\textwidth]
+  {step_04_visualizations/chart_03_customer_movement.png}
+\caption{Customer movement this quarter}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.85\textwidth]
+  {step_04_visualizations/chart_04_net_revenue_retention.png}
+\caption{Net revenue retention}
+\end{figure}
+
+\end{document}
+\end{lstlisting}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Building Your Own Pipeline}
+% ══════════════════════════════════════════════════════════════════════════════
+
+To create a new pipeline, follow these steps:
+
+\begin{enumerate}[leftmargin=1.5em]
+  \item \textbf{Define the end product.} What does the pipeline produce? Be specific: a PDF report, an MP3 audio file, a structured dataset, a published article?
+
+  \item \textbf{Work backwards to identify steps.} Starting from the final output, ask: what does the last step need as input? Then ask the same for the second-to-last step, and so on. This tends to reveal the natural step boundaries.
+
+  \item \textbf{Name each step clearly.} Use a short descriptive name that makes the directory self-explanatory: \texttt{step\_01\_content\_research}, \texttt{step\_02\_script\_writing}, not \texttt{step\_01\_a} or \texttt{step\_02\_misc}.
+
+  \item \textbf{Write \texttt{pipeline.md} first.} A clear pipeline overview helps you stay consistent when writing step specifications.
+
+  \item \textbf{Prepare \texttt{input\_data.md}.} Collect the raw data the pipeline will operate on and drop it into \texttt{input\_data.md} at the pipeline root. This file is the entry point for the first step and is the only thing you need to update between runs to reuse the same pipeline with new data.
+
+  \item \textbf{Write \texttt{spec.md} for each step.} Focus on the objective and guidelines. Be specific. Test your guidelines by asking: if someone read only this file, could they do this step correctly without asking any follow-up questions?
+
+  \item \textbf{Write \texttt{output.md} for each step.} Make the example as complete and realistic as possible. It is the most important part of this file.
+
+  \item \textbf{Decide output types.} For each step, decide whether the output is a file or a text block. Use files for anything that would be impractical to store as a string: structured datasets, images, compiled documents. Use text for short summaries, key metrics, or structured results that fit comfortably in a JSON value.
+
+  \item \textbf{Reference previous steps explicitly.} When a step depends on a prior step's output, say so in its \texttt{spec.md} guidelines. Don't assume the agent will infer the dependency.
+\end{enumerate}
+
+\subsection{Checklist for each step directory}
+
+\begin{itemize}[leftmargin=1.5em]
+  \item Directory is named with a zero-padded numeric prefix.
+  \item \texttt{spec.md} has both an Objective and a Guidelines section.
+  \item Guidelines are specific and measurable, not vague.
+  \item \texttt{output.md} has both a Format and an Example section.
+  \item The example in \texttt{output.md} accurately reflects what a correct output looks like.
+  \item Output type (file vs.\ text) is clearly stated.
+  \item If output type is file, the file name is explicitly specified.
+  \item Dependencies on previous step outputs are stated in the guidelines.
+\end{itemize}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Reference: \texttt{context.json} Schema}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\begin{lstlisting}[language={}]
+{
+  "<step_directory_name>": {
+    "output_type": "file" | "text",
+
+    // If output_type is "file" (single file):
+    "file_path": "<relative path from pipeline root>",
+
+    // If output_type is "file" (multiple files):
+    "files": [
+      "<relative path 1>",
+      "<relative path 2>"
+    ],
+
+    // If output_type is "text":
+    "content": "<full text content>",
+
+    // Always present:
+    "description": "<short human-readable description of this output>"
+  }
+}
+\end{lstlisting}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Quick Reference}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\begin{table}[h]
+\centering
+\renewcommand{\arraystretch}{1.4}
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{File} & \textbf{Purpose} \\
+\midrule
+\texttt{pipeline.md} & High-level overview and standing agent instructions \\
+\texttt{input\_data.md} & Raw input data for this pipeline run (edit between runs) \\
+\texttt{context.json} & Runtime state: records all step outputs (written by agent) \\
+\texttt{spec.md} & What the step must do and how well it must do it \\
+\texttt{output.md} & What the step must produce, with a concrete example \\
+\bottomrule
+\end{tabularx}
+\caption{Files in the modular agentic pipeline framework}
+\end{table}
+
+\begin{table}[h]
+\centering
+\renewcommand{\arraystretch}{1.4}
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{Output type} & \textbf{When to use} \\
+\midrule
+\texttt{file} & Structured data (CSV, JSON), documents (MD, TEX), images (PNG), or any output impractical to store as a string \\
+\texttt{text} & Short summaries, key metrics, brief structured results that fit comfortably in a JSON field \\
+\bottomrule
+\end{tabularx}
+\caption{Choosing an output type}
+\end{table}
+
+\end{document}
