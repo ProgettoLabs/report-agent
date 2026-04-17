@@ -12,23 +12,15 @@
 
 ## Executive Summary
 
-# Quarterly Executive Summary
-**Period:** Q3 2025 | **Prepared:** October 2025
+Acme Corp delivered solid top-line growth during Q3 2025, achieving total revenue of $5.95 million, representing a 10.2% increase compared to Q3 2024. Operating profit grew by 8.8% year-over-year, reaching $3.34 million. While revenue growth was robust, the increase in total operating expenses, which rose by 12.0%, resulted in a modest contraction of the operating margin, which moved from 56.9% to 56.1%. Overall, the quarter reflects successful revenue expansion coupled with increased operational investment.
 
-## Overview
-Acme Corp delivered solid performance throughout Q3 2025, demonstrating consistent top-line expansion and robust customer engagement. Total revenue reached $5.95 million, marking a 10.2% increase compared to the $5.40 million recorded in Q3 2024. Operating profit grew by 8.8% year-over-year, reaching $3.34 million. The company also saw significant growth in its customer base, achieving a 17.6% year-over-year increase in active customers.
+Revenue growth was supported by strong performance across both product lines and geographic regions. Product Line A was the primary contributor, increasing revenue by 10.5% year-over-year to $4.20 million. Regionally, APAC demonstrated the strongest growth momentum, increasing revenue by 14.0% to $2.85 million. Total operating expenses increased by 12.0%, driven notably by a 14.3% rise in Sales & Marketing spending. This investment in growth areas contributed to the overall profit increase, though the rate of expense growth slightly outpaced the rate of revenue growth.
 
-## Revenue and Profitability
-Revenue growth was supported by strong performance across key segments and geographies. Product Line A was the primary driver of growth, increasing by 10.5% year-over-year to $4.20 million. Regionally, APAC demonstrated the strongest growth, increasing revenue by 14.0% to $2.85 million. While total operating expenses increased by 12.0% to $2.61 million, this growth slightly outpaced the 10.2% revenue increase, causing the operating margin to contract modestly from 56.9% to 56.1%.
+The customer base for Acme Corp expanded significantly in Q3 2025. The company achieved a customer growth rate of 17.6% year-over-year, adding 387 new customers. Furthermore, the commitment from the existing client base remained strong, evidenced by a Net Revenue Retention rate of 112%, marking a four percentage point improvement from the prior year. The quarterly churn rate was recorded at 2.3%, which is a metric that warrants continued monitoring alongside the acquisition efforts.
 
-## Customer Growth and Retention
-The customer base continues to expand healthily for Acme Corp. The company ended Q3 2025 with 4,821 active customers, representing a 17.6% year-over-year increase. Furthermore, the Net Revenue Retention rate of 112% indicates that the existing customer base is expanding its usage and commitment to Acme Corp services. The quarterly churn rate was recorded at 2.3%, which is a metric that warrants continued monitoring alongside the strong retention figures.
+In terms of human capital, Acme Corp continued to scale its workforce. The total employee count at the end of Q3 2025 reached 328, up from 299 at the end of the previous year. This growth was supported by 24 new hires during the quarter, an increase from 18 hires in Q3 2024. Departures were recorded at 8, up from 6 in the prior year period, indicating a steady, managed increase in operational capacity to support the revenue trajectory.
 
-## Headcount and Operational Capacity
-In terms of operational capacity, Acme Corp increased its workforce during the quarter. The total employee count at the end of Q3 2025 reached 328, up from 299 at the end of Q3 2024. This growth was supported by 24 new hires, resulting in a net increase of 29 employees compared to the prior year period.
-
-## Areas for Attention
-While overall performance was positive, the analysis highlighted specific areas for review. Sales & Marketing expenses grew at 14.3% year-over-year, outpacing the overall revenue growth rate of 10.2%. Additionally, General & Admin expenses showed the lowest growth rate at 4.9% year-over-year, and EMEA revenue growth was the slowest at 6.9% year-over-year. Leadership attention should focus on ensuring that investments in sales capacity are aligned with expected returns, and reviewing the trajectory of regional revenue growth in EMEA.
+While the quarter showed positive momentum, the analysis highlighted specific areas for leadership review. The 14.3% increase in Sales & Marketing expenses outpaced the overall 10.2% revenue growth, suggesting a need to assess the return profile of current sales capacity investments. Additionally, General & Admin expenses grew by 4.9%, which was the lowest rate of expense increase across departments. It is noted that no single metric movement exceeded the 20% year-over-year threshold this quarter, suggesting a period of measured, controlled expansion.
 
 ---
 
@@ -66,47 +58,3 @@ While overall performance was positive, the analysis highlighted specific areas 
 | Customer growth rate | 17.6% YoY |
 | Quarterly churn rate | 2.3% |
 | Net revenue retention | 112% (vs 108% prior year, +4 pp YoY) |
-
----
-
-## Appendix — Full Data
-
-### Revenue by Product Line
-| Metric | Current Quarter | Prior Year Quarter | Notes |
-|---|---|---|---|
-| Product Line A | $4,200,000 | $3,800,000 | |
-| Product Line B | $1,750,000 | $1,600,000 | |
-| **Total** | **$5,950,000** | **$5,400,000** | |
-
-### Revenue by Region
-| Metric | Current Quarter | Prior Year Quarter | Notes |
-|---|---|---|---|
-| EMEA | $3,100,000 | $2,900,000 | |
-| APAC | $2,850,000 | $2,500,000 | |
-| **Total** | **$5,950,000** | **$5,400,000** | |
-
-### Operating Expenses by Department
-| Metric | Current Quarter | Prior Year Quarter | Notes |
-|---|---|---|---|
-| Engineering | $980,000 | $870,000 | |
-| Sales & Marketing | $1,200,000 | $1,050,000 | |
-| General & Admin | $430,000 | $410,000 | |
-| **Total** | **$2,610,000** | **$2,330,000** | |
-
-### Headcount
-| Metric | Current Quarter | Prior Year Quarter | Notes |
-|---|---|---|---|
-| Total employees (start of quarter) | 312 | 287 | |
-| Total employees (end of quarter) | 328 | 299 | |
-| New hires | 24 | 18 | |
-| Departures | 8 | 6 | |
-
-### Customer Metrics
-| Metric | Current Quarter | Prior Year Quarter | Notes |
-|---|---|---|---|
-| Active customers | 4,821 | 4,102 | |
-| New customers acquired | 387 | 310 | |
-| Churned customers | 94 | 88 | |
-| Net revenue retention (%) | 112 | 108 | |
-
-> No other validation issues found.
