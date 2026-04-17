@@ -1,24 +1,60 @@
 """
-Modular Agentic Pipeline Runner — LangChain Implementation
+Modular Agentic Pipeline Runner — LangChain Tool-Calling Implementation
 
-Reads a pipeline directory, discovers steps in order, and executes each
-one by calling an LLM with the step's spec, output format, and the
-previous step's output. All outputs are recorded in context.json.
+For each step directory the pipeline runs a dedicated agent loop.
+Each loop has access to read_step_output / write_step_output and decides:
+  - which prior step outputs (if any) it needs to read first
+  - when to write its own result
+
+Keeping one agent per step bounds the context window regardless of pipeline length.
 
 Requires Ollama running locally with the target model pulled.
 """
 
-import json
 from pathlib import Path
 
+from langchain_classic.agents import create_tool_calling_agent, AgentExecutor
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_ollama import ChatOllama
-from langchain_core.messages import HumanMessage, SystemMessage
 
+from tools import read_input_data, read_step_output, write_step_output
 from utils import PIPELINE_DIR
 
 
+# ---------------------------------------------------------------------------
+# System prompt — filled via .partial() with pipeline/step context.
+# {input} and {agent_scratchpad} are handled by the ChatPromptTemplate.
+# ---------------------------------------------------------------------------
+
+SYSTEM_PROMPT = """\
+You are an AI assistant executing one step of a multi-step data pipeline.
+
+## Pipeline Overview
+{pipeline_md}
+
+## Your Current Step: {step_name}  (step_number={step_number})
+
+### Spec
+{spec}
+
+### Required Output Format
+{output_format}
+
+---
+
+## Instructions
+1. Decide whether you need outputs from any previous steps. If so, use
+   read_step_output to fetch them (you may call it multiple times).
+2. Produce the output described in the spec and output format above.
+3. Call write_step_output to persist your result. Do NOT finish without writing.
+4. Once all outputs are written, reply with a short confirmation message."""
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
 def discover_steps(pipeline_dir: Path) -> list[Path]:
-    """Find all step_* directories, sorted by name."""
     return sorted(
         d for d in pipeline_dir.iterdir()
         if d.is_dir() and d.name.startswith("step_")
@@ -26,134 +62,85 @@ def discover_steps(pipeline_dir: Path) -> list[Path]:
 
 
 def read_file(path: Path) -> str:
-    """Read a file and return its contents, or empty string if missing."""
     return path.read_text() if path.exists() else ""
 
 
-def build_system_prompt(pipeline_md: str, spec: str, output_format: str) -> str:
-    return (
-        "You are an AI assistant executing one step of a multi-step pipeline.\n\n"
-        "## Pipeline Overview\n"
-        f"{pipeline_md}\n\n"
-        "## Your Task\n"
-        f"{spec}\n\n"
-        "## Required Output Format\n"
-        f"{output_format}\n\n"
-        "Produce ONLY the output described in the required output format. "
-        "Do not include any preamble, commentary, or explanation outside "
-        "the specified format."
-    )
+# ---------------------------------------------------------------------------
+# Per-step agent run
+# ---------------------------------------------------------------------------
 
-
-def format_prior_outputs(previous_outputs: dict[str, str]) -> str:
-    if not previous_outputs:
-        return ""
-        
-    sections = "\n\n---\n\n".join(
-        f"### {name}\n\n{content}"
-        for name, content in previous_outputs.items()
-    )
-    return f"Here are the outputs from all previous steps:\n\n{sections}\n\n"
-
-
-def build_user_content(input_data: str, previous_outputs: dict[str, str]) -> str:
-    prior_steps_text = format_prior_outputs(previous_outputs)
-    return (
-        "Here is the raw input data for this pipeline run:\n\n"
-        f"{input_data}\n\n"
-        f"{prior_steps_text}"
-        "Execute this step and produce the output in the specified format."
-    )
-
-
-def save_context(context_path: Path, context: dict) -> None:
-    context_path.write_text(json.dumps(context, indent=2))
-
-
-def save_final_report(root: Path, content: str) -> Path:
-    report_path = root / "final_report.md"
-    report_path.write_text(content)
-    return report_path
-
-
-def run_step(
-    step_dir: Path,
-    pipeline_md: str,
-    input_data: str,
-    previous_outputs: dict[str, str],
-    context: dict,
-    context_path: Path,
-    llm: ChatOllama,
-) -> str:
-    """Execute a single pipeline step, persist its output to context, and return the output."""
+def run_step(step_dir: Path, pipeline_md: str, llm: ChatOllama) -> None:
+    step_number = int(step_dir.name.split("_")[1])
     step_name = step_dir.name
-    print(f"[{step_name}] running ...")
+
+    print(f"\n[{step_name}] starting ...")
 
     spec = read_file(step_dir / "spec.md")
     output_format = read_file(step_dir / "output.md")
 
-    system_prompt = build_system_prompt(pipeline_md, spec, output_format)
-    user_content = build_user_content(input_data, previous_outputs)
+    tools = [read_input_data, read_step_output, write_step_output]
 
-    response = llm.invoke([
-        SystemMessage(content=system_prompt),
-        HumanMessage(content=user_content),
-    ])
-    step_output = response.content
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", SYSTEM_PROMPT),
+        ("human", "{input}"),
+        ("placeholder", "{agent_scratchpad}"),
+    ]).partial(
+        pipeline_md=pipeline_md,
+        step_name=step_name,
+        step_number=step_number,
+        spec=spec,
+        output_format=output_format,
+    )
 
-    context[step_name] = {
-        "output_type": "text",
-        "content": step_output,
-        "description": f"Output of {step_name}",
-    }
-    save_context(context_path, context)
+    agent = create_tool_calling_agent(llm, tools, prompt)
+    executor = AgentExecutor(
+        agent=agent,
+        tools=tools,
+        verbose=True,
+        max_iterations=20,       # read(s) + up to 6 writes + reasoning headroom
+    )
 
-    print(f"[{step_name}] done ({len(step_output)} chars)\n")
-    return step_output
+    executor.invoke({"input": f"Execute step {step_number} now."})
+    print(f"[{step_name}] done")
 
 
-def run_pipeline(pipeline_dir: str) -> str:
-    """Execute the full pipeline and return the final step's output."""
+# ---------------------------------------------------------------------------
+# Pipeline runner
+# ---------------------------------------------------------------------------
+
+def run_pipeline(pipeline_dir: str) -> None:
     root = Path(pipeline_dir).resolve()
-
     pipeline_md = read_file(root / "pipeline.md")
-    input_data = read_file(root / "input_data.md")
-
     steps = discover_steps(root)
+
     if not steps:
         print("No step directories found.")
-        return ""
+        return
 
-    print(f"Pipeline: {root.name}")
-    print(f"Steps:    {[s.name for s in steps]}\n")
+    print(f"Pipeline : {root.name}")
+    print(f"Steps    : {[s.name for s in steps]}")
 
-    context: dict = {}
     context_path = root / "context.json"
-    llm = ChatOllama(model="gemma4", num_ctx=32768, temperature=0)
+    context_path.write_text("{}")
+    print("Cleared  : context.json")
 
-    previous_outputs: dict[str, str] = {}
+    llm = ChatOllama(model="gemma4", num_ctx=65536, temperature=0)
 
     for step_dir in steps:
-        step_output = run_step(
-            step_dir, pipeline_md, input_data, previous_outputs, context, context_path, llm
-        )
-        previous_outputs[step_dir.name] = step_output
+        run_step(step_dir, pipeline_md, llm)
 
-    final_output = previous_outputs[steps[-1].name]
-    report_path = save_final_report(root, final_output)
+    print(f"\nPipeline complete. Results in {root / 'context.json'}")
 
-    print(f"Pipeline complete. Results in context.json and {report_path}")
-    return final_output
 
+# ---------------------------------------------------------------------------
+# Entry point
+# ---------------------------------------------------------------------------
 
 def main():
     if not PIPELINE_DIR.is_dir():
         print(f"Error: '{PIPELINE_DIR}' is not a directory")
         return
-
-    final_output = run_pipeline(str(PIPELINE_DIR))
-    if final_output:
-        print(f"Final report saved to final_report.md")
+    run_pipeline(str(PIPELINE_DIR))
 
 
 if __name__ == "__main__":
