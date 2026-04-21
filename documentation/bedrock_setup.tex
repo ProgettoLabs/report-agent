@@ -1,0 +1,488 @@
+\documentclass[12pt, a4paper]{article}
+
+% ─── Packages ────────────────────────────────────────────────────────────────
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{fancyhdr}
+\usepackage{mdframed}
+\usepackage{parskip}
+\usepackage{microtype}
+\usepackage{graphicx}
+
+% ─── Colours ─────────────────────────────────────────────────────────────────
+\definecolor{primary}{HTML}{1D9E75}
+\definecolor{secondary}{HTML}{534AB7}
+\definecolor{accent}{HTML}{BA7517}
+\definecolor{codebg}{HTML}{F5F5F0}
+\definecolor{codeborder}{HTML}{D3D1C7}
+\definecolor{notebg}{HTML}{E1F5EE}
+\definecolor{noteborder}{HTML}{0F6E56}
+\definecolor{warnbg}{HTML}{FAEEDA}
+\definecolor{warnborder}{HTML}{854F0B}
+\definecolor{darktext}{HTML}{2C2C2A}
+\definecolor{mutedtext}{HTML}{5F5E5A}
+
+% Python syntax highlighting colours
+\definecolor{pykeyword}{HTML}{0F6E56}
+\definecolor{pystring}{HTML}{BA7517}
+\definecolor{pycomment}{HTML}{7F7D75}
+\definecolor{pynumber}{HTML}{534AB7}
+\definecolor{pybuiltin}{HTML}{1D9E75}
+
+% ─── Hyperref ────────────────────────────────────────────────────────────────
+\hypersetup{
+  colorlinks=true,
+  linkcolor=secondary,
+  urlcolor=primary,
+  citecolor=primary,
+  pdftitle={Amazon Bedrock Setup Guide},
+  pdfauthor={},
+}
+
+% ─── Typography ──────────────────────────────────────────────────────────────
+\titleformat{\section}{\Large\bfseries\color{darktext}}{}{0em}{}[\color{primary}\titlerule]
+\titleformat{\subsection}{\large\bfseries\color{darktext}}{}{0em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{mutedtext}}{}{0em}{}
+
+\titlespacing{\section}{0pt}{2em}{0.8em}
+\titlespacing{\subsection}{0pt}{1.4em}{0.4em}
+\titlespacing{\subsubsection}{0pt}{1em}{0.3em}
+
+% ─── Code listings ───────────────────────────────────────────────────────────
+\lstdefinestyle{filestyle}{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small\color{darktext},
+  breaklines=true,
+  breakatwhitespace=false,
+  frame=single,
+  rulecolor=\color{codeborder},
+  framesep=8pt,
+  xleftmargin=8pt,
+  xrightmargin=8pt,
+  aboveskip=0.8em,
+  belowskip=0.8em,
+  showstringspaces=false,
+  tabsize=2,
+}
+
+% Python listing style — syntax highlighted
+\lstdefinestyle{pythonstyle}{
+  language=Python,
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small\color{darktext},
+  keywordstyle=\color{pykeyword}\bfseries,
+  stringstyle=\color{pystring},
+  commentstyle=\color{pycomment}\itshape,
+  numberstyle=\tiny\color{mutedtext},
+  emph={self,cls},
+  emphstyle=\color{pynumber}\itshape,
+  morekeywords={match,case},
+  breaklines=true,
+  breakatwhitespace=false,
+  frame=single,
+  rulecolor=\color{codeborder},
+  framesep=8pt,
+  xleftmargin=16pt,
+  xrightmargin=8pt,
+  aboveskip=0.8em,
+  belowskip=0.8em,
+  showstringspaces=false,
+  tabsize=4,
+  numbers=left,
+  numbersep=8pt,
+  literate={->}{{$\rightarrow$}}1,
+}
+
+% Shell / bash listing style
+\lstdefinestyle{shellstyle}{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small\color{darktext},
+  keywordstyle=\color{pykeyword}\bfseries,
+  commentstyle=\color{pycomment}\itshape,
+  breaklines=true,
+  breakatwhitespace=false,
+  frame=single,
+  rulecolor=\color{codeborder},
+  framesep=8pt,
+  xleftmargin=8pt,
+  xrightmargin=8pt,
+  aboveskip=0.8em,
+  belowskip=0.8em,
+  showstringspaces=false,
+  tabsize=2,
+  morekeywords={python,pip,aws,source,cd,mkdir,export},
+}
+
+\lstset{style=filestyle}
+
+% ─── Custom environments ─────────────────────────────────────────────────────
+\newmdenv[
+  backgroundcolor=notebg,
+  linecolor=noteborder,
+  linewidth=3pt,
+  topline=false,
+  bottomline=false,
+  rightline=false,
+  innerleftmargin=12pt,
+  innerrightmargin=12pt,
+  innertopmargin=8pt,
+  innerbottommargin=8pt,
+]{notebox}
+
+\newmdenv[
+  backgroundcolor=warnbg,
+  linecolor=warnborder,
+  linewidth=3pt,
+  topline=false,
+  bottomline=false,
+  rightline=false,
+  innerleftmargin=12pt,
+  innerrightmargin=12pt,
+  innertopmargin=8pt,
+  innerbottommargin=8pt,
+]{warnbox}
+
+% ─── Header / Footer ─────────────────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{mutedtext}Amazon Bedrock Setup Guide}
+\fancyfoot[C]{\small\color{mutedtext}\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{codeborder}\leaders\hrule height \headrulewidth\hfill}}
+
+% ─── Document ─────────────────────────────────────────────────────────────────
+\begin{document}
+
+% ── Title page ────────────────────────────────────────────────────────────────
+\begin{titlepage}
+  \centering
+  \vspace*{3cm}
+  {\color{primary}\rule{\linewidth}{2pt}}
+  \vspace{1cm}
+
+  {\Huge\bfseries\color{darktext} Amazon Bedrock}\\[0.5em]
+  {\Large\color{mutedtext} Setup Guide for the Pipeline Runner}
+
+  \vspace{1cm}
+  {\color{primary}\rule{\linewidth}{2pt}}
+
+  \vspace{2cm}
+  {\large\color{mutedtext}
+    A step-by-step guide to configuring AWS credentials\\
+    and running the Bedrock-backed pipeline agent.
+  }
+
+  \vfill
+  {\small\color{mutedtext} Version 1.0}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Introduction}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\texttt{3-bedrock-agent/agent.py} is a drop-in alternative to the LangChain-based runners. It executes the same modular pipeline — the same directory layout, the same \texttt{pipeline.md} / \texttt{input\_data.md} / \texttt{context.json} conventions — but replaces the local Ollama model with a Claude model hosted on \textbf{Amazon Bedrock}.
+
+The pipeline logic is identical: discover steps in order, build a system prompt and user message for each step, call the model, persist the output. The only difference is how the model is called. Instead of LangChain's \texttt{ChatOllama}, the agent uses the \texttt{boto3} AWS SDK and Bedrock's \textbf{Converse API}.
+
+This guide covers everything needed to go from a blank machine to a working Bedrock run:
+
+\begin{enumerate}[leftmargin=1.5em]
+  \item Installing the required Python packages.
+  \item Creating an AWS account and an IAM user with Bedrock access.
+  \item Generating and configuring AWS access keys.
+  \item Enabling the Claude model in the Bedrock console.
+  \item Understanding the code changes from the LangChain version.
+  \item Running the agent.
+\end{enumerate}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Step 1 — Install Python Dependencies}
+% ══════════════════════════════════════════════════════════════════════════════
+
+The Bedrock agent requires two additional packages beyond the base LangChain dependencies. Both are listed in \texttt{requirements.txt} at the repository root:
+
+\begin{lstlisting}[language={}]
+boto3>=1.34.0
+awscli>=1.32.0
+\end{lstlisting}
+
+Activate your virtual environment, then install:
+
+\begin{lstlisting}[style=shellstyle]
+source venv/bin/activate
+pip install -r requirements.txt
+\end{lstlisting}
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{\texttt{boto3}} is the official AWS SDK for Python. The agent uses it to call the Bedrock Converse API.
+  \item \textbf{\texttt{awscli}} provides the \texttt{aws} command-line tool, which is used in the next step to configure your credentials.
+\end{itemize}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Step 2 — Create an AWS Account}
+% ══════════════════════════════════════════════════════════════════════════════
+
+Amazon Bedrock is a service inside AWS — there is no separate Bedrock account. You need a standard AWS account.
+
+\begin{enumerate}[leftmargin=1.5em]
+  \item Go to \url{https://aws.amazon.com} and click \textbf{Create an AWS Account}.
+  \item Follow the sign-up flow. You will need an email address, a payment method, and a phone number for verification.
+  \item Once created, sign in to the \textbf{AWS Management Console} at \url{https://console.aws.amazon.com}.
+\end{enumerate}
+
+\begin{notebox}
+Amazon Bedrock API calls are billed per token. Claude Haiku is among the most cost-efficient models available. For development and testing, usage costs are typically negligible. Refer to the AWS Bedrock pricing page for current rates.
+\end{notebox}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Step 3 — Create an IAM User}
+% ══════════════════════════════════════════════════════════════════════════════
+
+AWS best practice is to never use your root account credentials for programmatic access. Instead, create a dedicated IAM user with only the permissions it needs.
+
+\begin{enumerate}[leftmargin=1.5em]
+  \item In the AWS Console, navigate to \textbf{IAM} (Identity and Access Management).
+  \item In the left sidebar, click \textbf{Users}, then \textbf{Create user}.
+  \item Enter a username — for example, \texttt{bedrock-agent}.
+  \item On the \textbf{Set permissions} screen, choose \textbf{Attach policies directly}.
+  \item Search for \texttt{AmazonBedrockFullAccess} and select it.
+  \item Leave \textit{Provide user access to the AWS Management Console} unchecked — you only need programmatic (API) access, not console login.
+  \item Complete the wizard and create the user.
+\end{enumerate}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Step 4 — Create an Access Key}
+% ══════════════════════════════════════════════════════════════════════════════
+
+Access keys are the credentials that \texttt{boto3} uses to authenticate API calls. They are separate from the IAM user's password.
+
+\begin{enumerate}[leftmargin=1.5em]
+  \item Open the IAM user you just created.
+  \item Click the \textbf{Security credentials} tab.
+  \item Scroll down to \textbf{Access keys} and click \textbf{Create access key}.
+  \item On the use-case screen, select \textbf{Local code} (or \textit{Command Line Interface}).
+  \item Click through to create the key. You will be shown:
+    \begin{itemize}
+      \item \textbf{Access Key ID} — a public identifier, starts with \texttt{AKIA\ldots}
+      \item \textbf{Secret Access Key} — a private secret shown only once
+    \end{itemize}
+  \item Copy both values. The secret key cannot be retrieved again after you close this screen.
+\end{enumerate}
+
+\begin{warnbox}
+Never commit your access keys to version control. Do not paste them into \texttt{agent.py} or any other file in the repository. The \texttt{aws configure} command in the next step stores them safely in \texttt{\textasciitilde/.aws/credentials} on your local machine.
+\end{warnbox}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Step 5 — Configure AWS Credentials}
+% ══════════════════════════════════════════════════════════════════════════════
+
+With the access keys in hand, run the AWS CLI configuration wizard:
+
+\begin{lstlisting}[style=shellstyle]
+aws configure
+\end{lstlisting}
+
+You will be prompted for four values. Use the answers below:
+
+\begin{table}[h]
+\centering
+\renewcommand{\arraystretch}{1.4}
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{Prompt} & \textbf{What to enter} \\
+\midrule
+AWS Access Key ID     & Paste the Access Key ID you copied in Step 4 \\
+AWS Secret Access Key & Paste the Secret Access Key you copied in Step 4 \\
+Default region name   & \texttt{us-east-1} \\
+Default output format & Press Enter to leave blank (defaults to \texttt{json}) \\
+\bottomrule
+\end{tabularx}
+\caption{Answers for \texttt{aws configure}}
+\end{table}
+
+The CLI writes these values to two files on your machine:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \texttt{\textasciitilde/.aws/credentials} — stores the Access Key ID and Secret Access Key.
+  \item \texttt{\textasciitilde/.aws/config} — stores the default region and output format.
+\end{itemize}
+
+\texttt{boto3} reads these files automatically at runtime — no environment variables or code changes are needed.
+
+\begin{notebox}
+The region \texttt{us-east-1} is used because it has the broadest availability for Bedrock models, including the Claude family. It also matches the \texttt{region\_name} argument in the agent's \texttt{boto3.client()} call.
+\end{notebox}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Step 6 — Enable the Model in Bedrock}
+% ══════════════════════════════════════════════════════════════════════════════
+
+AWS Bedrock requires you to explicitly opt in to each model before your account can call it. This is a one-time step per model per account.
+
+\begin{enumerate}[leftmargin=1.5em]
+  \item In the AWS Console, navigate to \textbf{Amazon Bedrock}.
+  \item Make sure you are in the \textbf{us-east-1 (N.\ Virginia)} region — check the region selector in the top-right corner.
+  \item In the left sidebar, click \textbf{Model access}.
+  \item Click \textbf{Enable specific models} (or \textbf{Modify model access}).
+  \item Find \textbf{Claude Haiku} under the Anthropic section and enable it.
+  \item Submit the request. Approval is typically instant for Anthropic models.
+\end{enumerate}
+
+\begin{notebox}
+Model access is regional. If you enable a model in \texttt{eu-west-1} but your agent is configured to call \texttt{us-east-1}, the call will fail. Always enable models in the same region the agent targets.
+\end{notebox}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{The Bedrock Agent — Code Explained}
+% ══════════════════════════════════════════════════════════════════════════════
+
+This section walks through the parts of \texttt{3-bedrock-agent/agent.py} that differ from the LangChain version. All pipeline logic — step discovery, prompt building, context persistence — is unchanged.
+
+\subsection{Imports}
+
+\begin{lstlisting}[style=pythonstyle]
+import boto3
+\end{lstlisting}
+
+The only new import. The \texttt{boto3} library provides the AWS SDK client. The LangChain imports (\texttt{ChatOllama}, \texttt{HumanMessage}, \texttt{SystemMessage}) are removed entirely.
+
+\subsection{Creating the client}
+
+\begin{lstlisting}[style=pythonstyle]
+client = boto3.client("bedrock-runtime", region_name="us-east-1")
+model_id = "us.anthropic.claude-haiku-4-5-20251001-v1:0"
+\end{lstlisting}
+
+\texttt{boto3.client("bedrock-runtime")} creates a low-level client for the Bedrock runtime service — the part that handles inference calls. This replaces the \texttt{ChatOllama(...)} initialisation from the LangChain version.
+
+The \texttt{model\_id} is the full identifier for the model you want to call. See Section~\ref{sec:model-id} for a detailed explanation of its format.
+
+\subsection{Calling the model}
+
+\begin{lstlisting}[style=pythonstyle]
+response = client.converse(
+    modelId=model_id,
+    system=[{"text": system_prompt}],
+    messages=[{"role": "user", "content": [{"text": user_content}]}],
+    inferenceConfig={"temperature": 0, "maxTokens": 8192},
+)
+step_output = response["output"]["message"]["content"][0]["text"]
+\end{lstlisting}
+
+This replaces the two lines in the LangChain version:
+
+\begin{lstlisting}[style=pythonstyle]
+response = llm.invoke([
+    SystemMessage(content=system_prompt),
+    HumanMessage(content=user_content),
+])
+step_output = response.content
+\end{lstlisting}
+
+The Converse API accepts system messages and conversation messages as separate parameters, which maps directly to the same two-message structure used in the LangChain version. The key differences in how each parameter works:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{\texttt{system}} — a list of content blocks. Each block is a dict with a \texttt{"text"} key. The system message is kept separate from the conversation history, mirroring how Bedrock's underlying models treat it natively.
+  \item \textbf{\texttt{messages}} — a list of conversation turns. Each turn has a \texttt{role} (\texttt{"user"} or \texttt{"assistant"}) and a \texttt{content} list. Each content item is a dict with a \texttt{"text"} key. For this single-turn use case there is exactly one user message.
+  \item \textbf{\texttt{inferenceConfig}} — controls generation behaviour. \texttt{temperature: 0} makes outputs deterministic. \texttt{maxTokens: 8192} sets the maximum response length.
+  \item \textbf{Response extraction} — the response is a nested dict. The text lives at \texttt{response["output"]["message"]["content"][0]["text"]}.
+\end{itemize}
+
+\subsection{Model ID and the \texttt{us.} prefix}
+\label{sec:model-id}
+
+The model ID used in the agent is:
+
+\begin{lstlisting}[language={}]
+us.anthropic.claude-haiku-4-5-20251001-v1:0
+\end{lstlisting}
+
+This follows the pattern \texttt{<region-prefix>.<provider>.<model-name>-<version>}.
+
+The \textbf{\texttt{us.} prefix} is the important part. Newer Claude models on Bedrock do not support \textit{on-demand} throughput when called with a bare model ID (e.g.\ \texttt{anthropic.claude-haiku-4-5-20251001-v1:0}). Calling the bare ID raises a \texttt{ValidationException}:
+
+\begin{lstlisting}[language={}]
+ValidationException: Invocation of model ID anthropic.claude-... with
+on-demand throughput isn't supported. Retry your request with the ID
+or ARN of an inference profile that contains this model.
+\end{lstlisting}
+
+The \texttt{us.} prefix selects a \textbf{cross-region inference profile} — a Bedrock construct that automatically routes your request across multiple US AWS regions for higher availability and throughput. This is required for all Claude 3.5 and newer models. The profile is pre-configured by AWS; you do not need to create or manage it yourself.
+
+\begin{notebox}
+If you switch to a different model family or a newer Claude release, check whether its Bedrock ID requires a regional prefix. As of 2025, all Claude 3.5 and Claude 4.x models require \texttt{us.} (for US-region accounts) or \texttt{eu.} (for EU-region accounts). Older models like Claude 3 Sonnet and Haiku v1 can be called with bare IDs.
+\end{notebox}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Running the Agent}
+% ══════════════════════════════════════════════════════════════════════════════
+
+With credentials configured and the model enabled, run the agent the same way as the LangChain version:
+
+\begin{lstlisting}[style=shellstyle]
+python 3-bedrock-agent/agent.py use-cases/1-quarterly-report
+\end{lstlisting}
+
+The agent will print progress for each step and write its results to \texttt{context.json} and \texttt{final\_report.md} inside the pipeline directory, identical to the LangChain runners.
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Troubleshooting}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{\texttt{NoCredentialsError} or \texttt{botocore.exceptions.NoRegionError}}
+
+\begin{itemize}[leftmargin=1.5em]
+  \item Run \texttt{aws configure} and verify that your Access Key ID, Secret Access Key, and region are set correctly.
+  \item Confirm that \texttt{\textasciitilde/.aws/credentials} exists and is not empty.
+\end{itemize}
+
+\subsection{\texttt{ValidationException: on-demand throughput isn't supported}}
+
+You are using a bare model ID without the regional prefix. Change the \texttt{model\_id} in \texttt{agent.py} to use the \texttt{us.} prefix:
+
+\begin{lstlisting}[language={}]
+# Wrong
+model_id = "anthropic.claude-haiku-4-5-20251001-v1:0"
+
+# Correct
+model_id = "us.anthropic.claude-haiku-4-5-20251001-v1:0"
+\end{lstlisting}
+
+\subsection{\texttt{AccessDeniedException}}
+
+\begin{itemize}[leftmargin=1.5em]
+  \item Your IAM user may be missing the \texttt{AmazonBedrockFullAccess} policy. Verify the policy is attached in the IAM console.
+  \item The model may not be enabled in your account. Go to Bedrock → Model access and confirm the model shows as \textit{Access granted}.
+  \item Confirm you are calling the model in the same region where you enabled it (\texttt{us-east-1}).
+\end{itemize}
+
+\subsection{\texttt{command not found: aws}}
+
+The AWS CLI is not installed or the virtual environment is not activated. Install it and retry:
+
+\begin{lstlisting}[style=shellstyle]
+pip install awscli
+aws configure
+\end{lstlisting}
+
+\subsection{Output is truncated or cut off mid-sentence}
+
+The response hit the \texttt{maxTokens} limit. Increase it in \texttt{agent.py}:
+
+\begin{lstlisting}[style=pythonstyle]
+inferenceConfig={"temperature": 0, "maxTokens": 16384},
+\end{lstlisting}
+
+Claude Haiku supports up to 8{,}192 output tokens by default. Check the current model limits in the Bedrock documentation if you need longer responses.
+
+\end{document}
