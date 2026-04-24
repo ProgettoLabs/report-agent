@@ -21,8 +21,8 @@ import boto3
 def discover_steps(pipeline_dir: Path) -> list[Path]:
     """Find all step_* directories, sorted by name."""
     return sorted(
-        d for d in pipeline_dir.iterdir()
-        if d.is_dir() and d.name.startswith("step_")
+        (d for d in pipeline_dir.iterdir() if d.is_dir() and d.name.startswith("step_")),
+        key=lambda d: int(d.name.split("_", 1)[1]),
     )
 
 

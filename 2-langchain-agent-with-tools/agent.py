@@ -56,8 +56,8 @@ You are an AI assistant executing one step of a multi-step data pipeline.
 
 def discover_steps(pipeline_dir: Path) -> list[Path]:
     return sorted(
-        d for d in pipeline_dir.iterdir()
-        if d.is_dir() and d.name.startswith("step_")
+        (d for d in pipeline_dir.iterdir() if d.is_dir() and d.name.startswith("step_")),
+        key=lambda d: int(d.name.split("_", 1)[1]),
     )
 
 
