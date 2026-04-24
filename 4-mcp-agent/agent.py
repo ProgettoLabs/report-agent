@@ -130,7 +130,7 @@ async def run_step(
 
 
 async def run_pipeline(use_case_input: str) -> str:
-    llm = ChatOllama(model="gemma4", num_ctx=32768, temperature=0)
+    llm = ChatOllama(model="gemma4:e4b", num_ctx=32768, temperature=0)
 
     async with Client(mcp) as client:
         use_case = await resolve_use_case(client, use_case_input, llm)

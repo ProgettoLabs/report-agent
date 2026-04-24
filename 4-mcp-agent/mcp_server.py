@@ -34,7 +34,7 @@ def list_steps(name: str) -> str:
     base = _use_case_path(name)
     steps = sorted(
         (p.name for p in base.iterdir() if p.is_dir() and p.name.startswith("step_")),
-        key=lambda name: int(name.split("_", 1)[1]),
+        key=lambda name: int(name.split("_")[1]),
     )
     return json.dumps(steps, indent=2)
 
