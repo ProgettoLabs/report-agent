@@ -1,0 +1,1350 @@
+\documentclass[12pt, a4paper]{article}
+
+% ─── Packages ────────────────────────────────────────────────────────────────
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{fancyhdr}
+\usepackage{mdframed}
+\usepackage{parskip}
+\usepackage{microtype}
+
+% ─── Colours ─────────────────────────────────────────────────────────────────
+\definecolor{primary}{HTML}{1D9E75}
+\definecolor{secondary}{HTML}{534AB7}
+\definecolor{codebg}{HTML}{F5F5F0}
+\definecolor{codeborder}{HTML}{D3D1C7}
+\definecolor{notebg}{HTML}{E1F5EE}
+\definecolor{noteborder}{HTML}{0F6E56}
+\definecolor{warnbg}{HTML}{FAEEDA}
+\definecolor{warnborder}{HTML}{854F0B}
+\definecolor{darktext}{HTML}{2C2C2A}
+\definecolor{mutedtext}{HTML}{5F5E5A}
+\definecolor{pykeyword}{HTML}{0F6E56}
+\definecolor{pystring}{HTML}{BA7517}
+\definecolor{pycomment}{HTML}{7F7D75}
+\definecolor{pynumber}{HTML}{534AB7}
+
+% ─── Hyperref ────────────────────────────────────────────────────────────────
+\hypersetup{
+  colorlinks=true,
+  linkcolor=secondary,
+  urlcolor=primary,
+  citecolor=primary,
+  pdftitle={Modular Agentic Task Runner — Complete Guide},
+  pdfauthor={},
+}
+
+% ─── Typography ──────────────────────────────────────────────────────────────
+\titleformat{\section}{\Large\bfseries\color{darktext}}{}{0em}{}[\color{primary}\titlerule]
+\titleformat{\subsection}{\large\bfseries\color{darktext}}{}{0em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{mutedtext}}{}{0em}{}
+
+\titlespacing{\section}{0pt}{2em}{0.8em}
+\titlespacing{\subsection}{0pt}{1.4em}{0.4em}
+\titlespacing{\subsubsection}{0pt}{1em}{0.3em}
+
+% ─── Code listings ───────────────────────────────────────────────────────────
+\lstdefinestyle{filestyle}{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small\color{darktext},
+  breaklines=true,
+  breakatwhitespace=false,
+  frame=single,
+  rulecolor=\color{codeborder},
+  framesep=8pt,
+  xleftmargin=8pt,
+  xrightmargin=8pt,
+  aboveskip=0.8em,
+  belowskip=0.8em,
+  showstringspaces=false,
+  tabsize=2,
+}
+
+\lstdefinestyle{pythonstyle}{
+  language=Python,
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small\color{darktext},
+  keywordstyle=\color{pykeyword}\bfseries,
+  stringstyle=\color{pystring},
+  commentstyle=\color{pycomment}\itshape,
+  numberstyle=\tiny\color{mutedtext},
+  emph={self,cls},
+  emphstyle=\color{pynumber}\itshape,
+  morekeywords={match,case},
+  breaklines=true,
+  breakatwhitespace=false,
+  frame=single,
+  rulecolor=\color{codeborder},
+  framesep=8pt,
+  xleftmargin=16pt,
+  xrightmargin=8pt,
+  aboveskip=0.8em,
+  belowskip=0.8em,
+  showstringspaces=false,
+  tabsize=4,
+  numbers=left,
+  numbersep=8pt,
+  literate={->}{{$\rightarrow$}}1,
+}
+
+\lstdefinestyle{filestyle}{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small\color{darktext},
+  breaklines=true,
+  breakatwhitespace=false,
+  frame=single,
+  rulecolor=\color{codeborder},
+  framesep=8pt,
+  xleftmargin=8pt,
+  xrightmargin=8pt,
+  aboveskip=0.8em,
+  belowskip=0.8em,
+  showstringspaces=false,
+  tabsize=2,
+}
+
+\lstdefinestyle{shellstyle}{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small\color{darktext},
+  keywordstyle=\color{pykeyword}\bfseries,
+  commentstyle=\color{pycomment}\itshape,
+  breaklines=true,
+  breakatwhitespace=false,
+  frame=single,
+  rulecolor=\color{codeborder},
+  framesep=8pt,
+  xleftmargin=8pt,
+  xrightmargin=8pt,
+  aboveskip=0.8em,
+  belowskip=0.8em,
+  showstringspaces=false,
+  tabsize=2,
+  morekeywords={python,pip,brew,ollama,source,cd,mkdir,git},
+}
+
+\lstset{style=filestyle}
+
+% ─── Custom environments ─────────────────────────────────────────────────────
+\newmdenv[
+  backgroundcolor=notebg,
+  linecolor=noteborder,
+  linewidth=3pt,
+  topline=false,
+  bottomline=false,
+  rightline=false,
+  innerleftmargin=12pt,
+  innerrightmargin=12pt,
+  innertopmargin=8pt,
+  innerbottommargin=8pt,
+]{notebox}
+
+\newmdenv[
+  backgroundcolor=warnbg,
+  linecolor=warnborder,
+  linewidth=3pt,
+  topline=false,
+  bottomline=false,
+  rightline=false,
+  innerleftmargin=12pt,
+  innerrightmargin=12pt,
+  innertopmargin=8pt,
+  innerbottommargin=8pt,
+]{warnbox}
+
+% ─── Header / Footer ─────────────────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{mutedtext}Modular Agentic Task Runner --- Complete Guide}
+\fancyfoot[C]{\small\color{mutedtext}\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{codeborder}\leaders\hrule height \headrulewidth\hfill}}
+
+% ─── Document ─────────────────────────────────────────────────────────────────
+\begin{document}
+
+% ── Title page ────────────────────────────────────────────────────────────────
+\begin{titlepage}
+  \centering
+  \vspace*{3cm}
+  {\color{primary}\rule{\linewidth}{2pt}}
+  \vspace{1cm}
+
+  {\Huge\bfseries\color{darktext} Modular Agentic Task Runner}\\[0.5em]
+  {\Large\color{mutedtext} Complete Guide}
+
+  \vspace{1cm}
+  {\color{primary}\rule{\linewidth}{2pt}}
+
+  \vspace{2cm}
+  {\large\color{mutedtext}
+    Design guide, code walkthrough, and worked example\\
+    for the simple task runner.
+  }
+
+  \vfill
+  {\small\color{mutedtext} Version 1.0}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Introduction}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{The problem: repetitive knowledge work}
+
+Imagine you are an analyst at a corporation. Every quarter, your manager asks you to produce a report on the company's performance. The raw numbers change --- revenue, headcount, customer counts, expenses --- but the \textit{shape} of the job does not. You have done it before, and you will do it again next quarter, and the quarter after that.
+
+If you stopped and wrote down exactly how you do it, it might look something like this:
+
+\begin{enumerate}[leftmargin=1.5em]
+  \item \textbf{Gather the data.} Pull revenue figures from finance. Pull customer numbers from the CRM. Pull headcount from HR. Put it all in one spreadsheet.
+  \item \textbf{Analyse it.} Calculate year-on-year changes. Work out margins. Flag anything that moved more than 20\% in either direction.
+  \item \textbf{Write the story.} Draft an executive summary that explains what the numbers mean. Open with overall performance, then drill into revenue, customers, and headcount. Close with anything leadership should pay attention to.
+  \item \textbf{Make the charts.} Open Excel or matplotlib. Build a revenue-versus-expenses bar chart, a segment growth chart, a customer movement chart, and a retention chart.
+  \item \textbf{Assemble the document.} Open Word (or Google Docs, or \LaTeX). Add a title page. Paste in the executive summary. Embed the charts with captions. Export the PDF.
+\end{enumerate}
+
+Five steps. Each one depends on the one before it: you cannot analyse data you have not gathered, you cannot write about an analysis you have not done, and you cannot typeset charts you have not generated. When Q4 rolls around you do not invent a new process --- you run the same five steps with fresh numbers.
+
+\begin{notebox}
+\textbf{This is the pattern we are going to automate.} Not the thinking that goes into designing the process --- that stays with you --- but the mechanical execution of each step, once the recipe is written down.
+\end{notebox}
+
+\subsection{A first instinct: ``just ask ChatGPT''}
+
+A natural reaction is to open a chat window, paste in all the raw data, and type: \textit{``Write me a quarterly business report.''} Sometimes this works. More often, a few things go wrong:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{The model skips work.} It might produce a narrative without ever doing the year-on-year calculations, so the numbers in the prose do not actually reconcile with the input.
+  \item \textbf{It invents details.} With no instruction about what \textit{not} to say, it may add fictional commentary about market conditions or competitor activity.
+  \item \textbf{The output format drifts.} One run gives you a PDF-ready file; the next gives you a markdown document; the next gives you bullet points. You cannot plug it into a consistent workflow.
+  \item \textbf{It is unrepeatable.} Next quarter you will write the same sprawling prompt from scratch and get a subtly different result.
+\end{itemize}
+
+The problem is not that the model is incapable. The problem is that you gave it the whole job in one swing, with no structure, no checkpoints, and no clear definition of what ``done'' looks like at each stage.
+
+\subsection{The key idea: break the job into small, well-defined steps}
+
+Look again at the five-step list above. Notice that each step has three things you could write down on paper:
+
+\begin{enumerate}[leftmargin=1.5em]
+  \item \textbf{A goal.} What am I trying to produce in this step? (``A clean dataset of all the quarter's metrics.'')
+  \item \textbf{Some guidelines.} What rules must I follow? (``Include year-on-year comparisons. Do not include personally identifiable information.'')
+  \item \textbf{A target format.} What does my output look like when I am done? (``A CSV table with these specific columns.'')
+\end{enumerate}
+
+If you can write those three things clearly for one step, you can hand that step to anyone --- a junior colleague, an intern, or, as it turns out, a language model --- and expect a usable result. You do not need to explain \textit{how} to do the step. You just need to specify the goal, the rules, and the shape of the output.
+
+This is exactly how a well-run team already operates. A manager does not tell an analyst \textit{how} to open Excel and which keys to press. The manager says: ``I need year-on-year revenue growth by segment, delivered as a table, by Friday.'' The analyst figures out the rest.
+
+\subsection{From a list of steps to a runnable pipeline}
+
+Now take that list of steps and give each one its own folder on your computer. Inside each folder, put two short text files:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \texttt{spec.md} --- the goal and the guidelines for this step.
+  \item \texttt{output.md} --- the required format, with an example.
+\end{itemize}
+
+At the top level, alongside the step folders, put one file with the raw numbers for this quarter (\texttt{input\_data.md}) and one file with a short description of the overall task (\texttt{agent\_task\_description.md}).
+
+That is the whole setup. You have turned a vague ``write the quarterly report'' ask into a stack of small, individually-reviewable instructions. Anyone can read the folder and understand what the pipeline does, because it is all plain English.
+
+\begin{notebox}
+\textbf{The framework is the execution layer.} Once your step folders exist, a small Python script (roughly 100 lines) walks through them in order, hands each one's instructions to a language model, and threads the outputs together. The design work --- deciding what the steps are and what each one should produce --- is the part that requires your judgment. The script just runs the recipe.
+\end{notebox}
+
+\subsection{Why this approach works}
+
+Three practical benefits fall out of organising the work this way:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{Repeatability.} Next quarter you replace \texttt{input\_data.md} and run the pipeline again. The specs and output formats do not change. You get the same shape of report every time.
+  \item \textbf{Reviewability.} If the final report looks wrong, you do not have to debug a giant prompt. You can open \texttt{context.json} (the file where each step's output is saved) and see exactly where the pipeline went off-course --- was the data wrong, the analysis wrong, or the narrative wrong?
+  \item \textbf{Reusability.} The analysis step you wrote for the quarterly report can be copied into a monthly report, a board-pack pipeline, or an investor update. The specs describe the work, not the context around it.
+\end{itemize}
+
+\subsection{Where this can go next}
+
+The pipeline we have described is deliberately the simplest thing that works: steps run one after another, the agent only has a language model to think with, and a human kicks the whole thing off. That is enough for the quarterly report, but it is not the whole story. Three extensions are worth knowing about --- not because you need them today, but because they are the natural next moves once the basic shape feels comfortable.
+
+\subsubsection{Parallel steps}
+
+The current framework assumes a strict sequence: step 2 waits for step 1, step 3 waits for step 2, and so on. In practice, not every step genuinely depends on the one before it. Consider the quarterly report: once the data has been gathered in step 1, the financial analysis and the customer-metrics analysis do not need each other. They could run side-by-side and meet again before the narrative is drafted.
+
+Allowing steps to run in parallel means the runner needs to understand a \textit{graph} of dependencies rather than a plain list. Each step declares which earlier steps it needs, and anything that does not conflict can execute concurrently. For long pipelines or slow model calls, this is where real wall-clock time is saved.
+
+\subsubsection{Tools and MCP}
+
+So far, each step has only one thing to work with: the text in its prompt. That is a surprisingly strong setup, but it hits a ceiling the moment the step needs \textit{live} information --- a current stock price, a row from a production database, a file in a shared drive. You cannot paste those into \texttt{input\_data.md} ahead of time, because they change.
+
+Giving the agent access to \textbf{tools} removes that ceiling. A data-gathering step can query the warehouse directly instead of receiving pre-exported numbers. A fact-checking step can hit a search API. The \textbf{Model Context Protocol (MCP)} is the emerging standard for exposing these tools to a model in a uniform way: instead of wiring each integration by hand, you point the agent at an MCP server and it discovers what it can do. The pipeline stays the same; the steps just become more capable.
+
+\subsubsection{OpenClaw agents}
+
+The final extension is to stop running the pipeline on your laptop at all. \textbf{OpenClaw} lets you deploy an end-to-end workflow as a hosted agent: you connect your data sources and MCP servers once, and the agent executes the same step folders you already have, on a schedule you choose.
+
+The quarterly-report pipeline becomes a cron entry that fires on the first Monday of each quarter: pulls fresh numbers from the warehouse through an MCP connector, runs all five steps, and drops the compiled PDF into a shared drive before anyone has opened their laptop. The design work --- the \texttt{spec.md} and \texttt{output.md} files --- does not change. What changes is that the pipeline stops being something you \textit{run} and becomes something that \textit{runs on its own}.
+
+\clearpage
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Framework Design}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{The Agent Runner}
+
+The agent runner is the script that executes the task. It is given a single input: the path to a \textbf{root directory}. From there it:
+
+\begin{enumerate}[leftmargin=1.5em]
+  \item Reads \texttt{agent\_task\_description.md} in the root directory for an overview of the task.
+  \item Reads \texttt{input\_data.md} to obtain the raw input for this run.
+  \item Discovers all step subdirectories in alphabetical/numerical order.
+  \item For each step, reads \texttt{spec.md} and \texttt{output.md}.
+  \item Calls the language model with the step's context and records the response.
+  \item Appends the step's output to \texttt{context.json}.
+  \item Moves to the next step, passing all prior outputs as additional context.
+\end{enumerate}
+
+\begin{notebox}
+\textbf{Key principle:} The agent decides \textit{how} to accomplish each step. The specification files describe \textit{what} needs to be done and \textit{what the output should look like} --- never which code to run or how to structure the reasoning. The agent's job is interpretation and execution.
+\end{notebox}
+
+\subsection{State and Context}
+
+State flows between steps through \texttt{context.json}. After each step completes, the runner writes the step's output into this file. Each subsequent step receives the accumulated outputs of all prior steps alongside the original \texttt{input\_data.md}.
+
+In the simple runner, every output is stored as plain text directly in \texttt{context.json}. There is no file system abstraction: if a step produces a long structured document, the entire text is stored in the \texttt{content} field. This is simple and robust for most tasks, though the accumulated context grows with each step.
+
+\begin{warnbox}
+The simple runner passes \textit{all} prior step outputs into every subsequent step's prompt. This means the prompt size grows linearly with the number of steps. For very long tasks with verbose outputs, you may need to raise the model's context window (\texttt{num\_ctx}) or keep individual step outputs concise.
+\end{warnbox}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Directory Structure}
+% ══════════════════════════════════════════════════════════════════════════════
+
+Every task follows the same layout. The root directory contains two markdown files and any number of step subdirectories, named with a numeric prefix to define their order.
+
+\begin{lstlisting}
+my_task/
+|-- agent_task_description.md    (Overview and agent-level instructions)
+|-- input_data.md  (Raw input data for this run)
+|-- context.json   (Written at runtime; tracks all outputs)
+|
+|-- step_01_<name>/
+|   |-- spec.md    (Objective + guidelines for this step)
+|   +-- output.md  (Expected output format + example)
+|
+|-- step_02_<name>/
+|   |-- spec.md
+|   +-- output.md
+|
++-- step_N_<name>/
+    |-- spec.md
+    +-- output.md
+\end{lstlisting}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{File Specifications}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{\texttt{agent\_task\_description.md} --- Task overview}
+
+This file sits at the root of the task directory. It gives the agent a high-level understanding of the overall task and provides standing instructions that apply across all steps.
+
+\textbf{Sections to include:}
+
+\begin{itemize}[leftmargin=1.5em]
+  \item A one-paragraph description of what this task produces.
+  \item The intended audience or use case for the output.
+  \item Standing agent instructions: how to read \texttt{context.json} and how to pass context between steps.
+\end{itemize}
+
+\textbf{Template:}
+
+\begin{lstlisting}[language={}]
+# Task: <Name>
+
+## Overview
+<One paragraph describing what this task does and what it produces.>
+
+## Audience
+<Who will use or read the final output? What is their level of expertise?>
+
+## Agent Instructions
+- Before starting each step, read `context.json` in this directory.
+- Find the entry for the most recently completed step.
+- The content is available directly in the `content` field.
+- After completing each step, update `context.json` with the step's
+  output before moving on.
+\end{lstlisting}
+
+\subsection{\texttt{input\_data.md} --- Raw input data}
+
+This file holds the \textbf{raw input} that the task will operate on for this particular run: the numbers, tables, facts, or text that the first step needs to get started. It is the only file a non-technical user needs to edit between runs.
+
+\begin{notebox}
+\textbf{Why a dedicated input file?} Separating the \textit{data} from the \textit{specification} means the task definition stays stable across runs. To produce a Q4 report instead of a Q3 report, you only need to replace \texttt{input\_data.md} --- not touch any \texttt{spec.md} or \texttt{output.md}.
+\end{notebox}
+
+The simple runner includes \texttt{input\_data.md} in \textit{every} step's prompt, so every step can reference the original data even as context accumulates from prior steps.
+
+\textbf{What to include:}
+
+\begin{itemize}[leftmargin=1.5em]
+  \item Any raw figures, tables, or facts the task must operate on.
+  \item Contextual metadata such as the reporting period, company name, or subject identifier.
+  \item Free-form notes or caveats the agent should be aware of at the start of the run.
+\end{itemize}
+
+\textbf{Template:}
+
+\begin{lstlisting}[language={}]
+# Input Data: <Task Name>
+
+## <Context section>
+- **<Field>:** <Value>
+
+## <Data section>
+| Column A | Column B |
+|---|---|
+| ...      | ...      |
+
+## <Additional notes>
+<Any caveats or context relevant to this run.>
+\end{lstlisting}
+
+\begin{warnbox}
+If \texttt{input\_data.md} is missing or empty, the task will either fail or produce a useless output. Always confirm this file is present and populated before running the agent.
+\end{warnbox}
+
+\subsection{\texttt{spec.md} --- Step specification}
+
+Every step directory contains a \texttt{spec.md} file. This is the primary instruction document for the agent for that step. It has two sections.
+
+\textbf{Section 1 --- Objective:} A concise statement of what this step must accomplish. One to three sentences. Think of it as the brief a manager would give to a team member.
+
+\textbf{Section 2 --- Guidelines:} Detailed instructions, constraints, quality standards, and edge cases. This is where the nuance lives.
+
+\textbf{Template:}
+
+\begin{lstlisting}[language={}]
+# Step <N>: <Name>
+
+## Objective
+<One to three sentences describing what this step must produce.
+Be specific about the subject matter, not about tools or methods.>
+
+## Guidelines
+- <Guideline 1: a specific instruction, constraint, or quality standard.>
+- <Guideline 2>
+- <Each guideline should be a single, actionable statement. Avoid vague
+  language like "ensure quality" --- be concrete.>
+\end{lstlisting}
+
+\subsection{\texttt{output.md} --- Output format and example}
+
+Every step directory also contains an \texttt{output.md} file. This tells the agent exactly what its deliverable should look like. It has two sections.
+
+\textbf{Section 1 --- Output format:} Describes the structure of the output. Should the agent produce a CSV-formatted text block? A markdown document? A JSON object? State the format unambiguously.
+
+\textbf{Section 2 --- Example:} A concrete example of what a correct output looks like. The example does not need to use real data, but it must accurately represent the expected structure and level of detail.
+
+\textbf{Template:}
+
+\begin{lstlisting}[language={}]
+# Output: Step <N>
+
+## Format
+- **Type:** text
+- **Structure:** <Describe the sections, fields, or schema.>
+
+## Example
+<Provide a realistic example of what the output should look like.>
+\end{lstlisting}
+
+\begin{notebox}
+The simple runner stores all outputs as plain text in \texttt{context.json}. Even if a step produces something structured like a CSV table or a markdown document, it is captured as a text string. Design your output formats with this in mind.
+\end{notebox}
+
+\subsection{\texttt{context.json} --- Runtime state}
+
+This file is written and updated by the runner at runtime. It is not authored by the task designer. Each key matches the step directory name. After the run, it contains the complete output of every step.
+
+\textbf{Structure (simple runner):}
+
+\begin{lstlisting}[language={}]
+{
+  "step_01_<name>": {
+    "output_type": "text",
+    "content": "The full text content of the output goes here.",
+    "description": "Short description of what this text represents."
+  },
+  "step_02_<name>": {
+    "output_type": "text",
+    "content": "...",
+    "description": "..."
+  }
+}
+\end{lstlisting}
+
+\clearpage
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Building Your Own Task}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\begin{enumerate}[leftmargin=1.5em]
+  \item \textbf{Define the end product.} What does the task produce? Be specific: a markdown report, a structured data table, a draft article?
+
+  \item \textbf{Work backwards to identify steps.} Starting from the final output, ask: what does the last step need as input? Then ask the same for the second-to-last step, and so on. This reveals the natural step boundaries.
+
+  \item \textbf{Name each step clearly.} Use a short descriptive name that makes the directory self-explanatory: \texttt{step\_01\_data\_gathering}, \texttt{step\_02\_analysis}, not \texttt{step\_01\_a} or \texttt{step\_02\_misc}.
+
+  \item \textbf{Write \texttt{agent\_task\_description.md} first.} A clear task overview helps you stay consistent when writing step specifications.
+
+  \item \textbf{Prepare \texttt{input\_data.md}.} Collect the raw data the task will operate on. This file is the only thing you need to update between runs.
+
+  \item \textbf{Write \texttt{spec.md} for each step.} Focus on the objective and guidelines. Test your guidelines by asking: if someone read only this file, could they do this step correctly without any follow-up questions?
+
+  \item \textbf{Write \texttt{output.md} for each step.} Make the example as complete and realistic as possible. It is the most important part of the file.
+
+  \item \textbf{Reference previous steps explicitly.} When a step depends on a prior step's output, say so in its \texttt{spec.md} guidelines.
+\end{enumerate}
+
+\subsection{Checklist for each step directory}
+
+\begin{itemize}[leftmargin=1.5em]
+  \item Directory is named with a zero-padded numeric prefix.
+  \item \texttt{spec.md} has both an Objective and a Guidelines section.
+  \item Guidelines are specific and measurable, not vague.
+  \item \texttt{output.md} has both a Format and an Example section.
+  \item The example in \texttt{output.md} accurately reflects what a correct output looks like.
+  \item Dependencies on previous step outputs are stated in the guidelines.
+\end{itemize}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\appendix
+\renewcommand{\thesection}{\Alph{section}}
+\titleformat{\section}{\Large\bfseries\color{darktext}}{Annex \thesection\ ---\ }{0em}{}[\color{primary}\titlerule]
+% ══════════════════════════════════════════════════════════════════════════════
+
+\clearpage
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Code Walkthrough}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\texttt{1-langchain-agent/agent.py} is the simplest possible implementation of the task runner. It reads every task file, builds a single prompt per step, calls the LLM, and writes the response back. There are no tools and no agent loop --- just one LLM call per step.
+
+\subsection{High-level flow}
+
+For a task with steps \texttt{step\_01}, \texttt{step\_02}, \ldots, \texttt{step\_N}, the runner does the following:
+
+\begin{enumerate}[leftmargin=1.5em]
+  \item Load \texttt{agent\_task\_description.md} and \texttt{input\_data.md} from the task root.
+  \item Discover step directories in sorted order.
+  \item For each step: read \texttt{spec.md} and \texttt{output.md}, build a system prompt and a user message, invoke the model, append the result to \texttt{context.json}.
+  \item After the last step, save its output verbatim as \texttt{final\_report.md}.
+\end{enumerate}
+
+\subsection{Imports}
+
+\begin{lstlisting}[style=pythonstyle]
+import json
+import sys
+from pathlib import Path
+
+from langchain_ollama import ChatOllama
+from langchain_core.messages import HumanMessage, SystemMessage
+\end{lstlisting}
+
+The runner only needs two things from LangChain: the \texttt{ChatOllama} chat model wrapper, and \texttt{HumanMessage} / \texttt{SystemMessage} for constructing a two-message conversation. Everything else is the Python standard library.
+
+\subsection{Discovering steps and reading files}
+
+\begin{lstlisting}[style=pythonstyle]
+def discover_steps(task_dir: Path) -> list[Path]:
+    return sorted(
+        d for d in task_dir.iterdir()
+        if d.is_dir() and d.name.startswith("step_")
+    )
+
+
+def read_file(path: Path) -> str:
+    return path.read_text() if path.exists() else ""
+\end{lstlisting}
+
+\texttt{discover\_steps} is the heart of the ordering convention. Because step directories are named \texttt{step\_01\_\ldots}, \texttt{step\_02\_\ldots}, Python's default lexicographic sort puts them in the right order automatically.
+
+\texttt{read\_file} returns an empty string if the file does not exist, so a missing \texttt{output.md} or \texttt{input\_data.md} does not crash the runner --- it just produces a weaker prompt.
+
+\subsection{Building the prompt}
+
+The runner constructs two messages per step. The system message carries the stable context: the task overview, this step's instructions, and the required output format. The user message carries the per-run payload: the raw input data and all prior step outputs.
+
+\begin{lstlisting}[style=pythonstyle]
+def build_system_prompt(agent_task_description: str, spec: str, output_format: str) -> str:
+    return (
+        "You are an AI assistant executing one step of a multi-step task.\n\n"
+        "## Task Overview\n"
+        f"{agent_task_description}\n\n"
+        "## Your Task\n"
+        f"{spec}\n\n"
+        "## Required Output Format\n"
+        f"{output_format}\n\n"
+        "Produce ONLY the output described in the required output format. "
+        "Do not include any preamble, commentary, or explanation outside "
+        "the specified format."
+    )
+\end{lstlisting}
+
+The tight closing instruction matters. Without it, models often prepend ``Here is the output:'' or wrap the result in backticks, which breaks downstream steps that expect the raw format.
+
+\begin{lstlisting}[style=pythonstyle]
+def format_prior_outputs(previous_outputs: dict[str, str]) -> str:
+    if not previous_outputs:
+        return ""
+    sections = "\n\n---\n\n".join(
+        f"### {name}\n\n{content}"
+        for name, content in previous_outputs.items()
+    )
+    return f"Here are the outputs from all previous steps:\n\n{sections}\n\n"
+
+
+def build_user_content(input_data: str, previous_outputs: dict[str, str]) -> str:
+    prior_steps_text = format_prior_outputs(previous_outputs)
+    return (
+        "Here is the raw input data for this run:\n\n"
+        f"{input_data}\n\n"
+        f"{prior_steps_text}"
+        "Execute this step and produce the output in the specified format."
+    )
+\end{lstlisting}
+
+Every step sees \texttt{input\_data.md} in its user message, followed by all prior step outputs concatenated and separated by \texttt{---}. For step 1, \texttt{previous\_outputs} is empty and only the raw input is passed.
+
+\subsection{Persisting state}
+
+\begin{lstlisting}[style=pythonstyle]
+def save_context(context_path: Path, context: dict) -> None:
+    context_path.write_text(json.dumps(context, indent=2))
+
+
+def save_final_report(root: Path, content: str) -> Path:
+    report_path = root / "final_report.md"
+    report_path.write_text(content)
+    return report_path
+\end{lstlisting}
+
+Two single-purpose writers: one for the runtime state (\texttt{context.json}), one for a convenience copy of the final step's output (\texttt{final\_report.md}). The final report is just the last step's raw text --- whatever format your last step produces.
+
+\subsection{Running a single step}
+
+\begin{lstlisting}[style=pythonstyle]
+def run_step(
+    step_dir: Path,
+    agent_task_description: str,
+    input_data: str,
+    previous_outputs: dict[str, str],
+    context: dict,
+    context_path: Path,
+    llm: ChatOllama,
+) -> str:
+    step_name = step_dir.name
+    print(f"[{step_name}] running ...")
+
+    spec = read_file(step_dir / "spec.md")
+    output_format = read_file(step_dir / "output.md")
+
+    system_prompt = build_system_prompt(agent_task_description, spec, output_format)
+    user_content = build_user_content(input_data, previous_outputs)
+
+    response = llm.invoke([
+        SystemMessage(content=system_prompt),
+        HumanMessage(content=user_content),
+    ])
+    step_output = response.content
+
+    context[step_name] = {
+        "output_type": "text",
+        "content": step_output,
+        "description": f"Output of {step_name}",
+    }
+    save_context(context_path, context)
+
+    print(f"[{step_name}] done ({len(step_output)} chars)\n")
+    return step_output
+\end{lstlisting}
+
+\texttt{run\_step} is the unit of work. It reads the two spec files, assembles the prompt, invokes the model, and writes the result to \texttt{context.json} keyed by the step directory name. Every output is stored as \texttt{"output\_type": "text"}. The \texttt{llm.invoke([...])} call is synchronous and returns an \texttt{AIMessage}; its \texttt{.content} attribute is the raw response string.
+
+\subsection{Running the task}
+
+\begin{lstlisting}[style=pythonstyle]
+def run_task(task_dir: str) -> str:
+    root = Path(task_dir).resolve()
+
+    agent_task_description = read_file(root / "agent_task_description.md")
+    input_data = read_file(root / "input_data.md")
+
+    steps = discover_steps(root)
+    if not steps:
+        print("No step directories found.")
+        return ""
+
+    print(f"Task: {root.name}")
+    print(f"Steps:    {[s.name for s in steps]}\n")
+
+    context: dict = {}
+    context_path = root / "context.json"
+    llm = ChatOllama(model="gemma4", num_ctx=32768, temperature=0)
+
+    previous_outputs: dict[str, str] = {}
+
+    for step_dir in steps:
+        step_output = run_step(
+            step_dir, agent_task_description, input_data,
+            previous_outputs, context, context_path, llm,
+        )
+        previous_outputs[step_dir.name] = step_output
+
+    final_output = previous_outputs[steps[-1].name]
+    report_path = save_final_report(root, final_output)
+
+    print(f"Task complete. Results in context.json and {report_path}")
+    return final_output
+\end{lstlisting}
+
+A few details worth noting:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \texttt{num\_ctx=32768} bumps Ollama's default context window so that the accumulated prompt has room to grow across steps. Raise this further if you see truncation on long tasks.
+  \item \texttt{temperature=0} makes outputs deterministic. For creative steps (narrative writing, summarisation) you may want to raise it to 0.3--0.7.
+  \item \texttt{previous\_outputs} is built up step by step and passed into every subsequent \texttt{run\_step} call. It is the live channel for cross-step state during the run; \texttt{context.json} is there for persistence and inspection after the run.
+\end{itemize}
+
+\subsection{Entry point}
+
+\begin{lstlisting}[style=pythonstyle]
+def main():
+    if len(sys.argv) != 2:
+        print("Usage: python agent.py <task_directory>")
+        sys.exit(1)
+
+    task_dir = sys.argv[1]
+    if not Path(task_dir).is_dir():
+        print(f"Error: {task_dir} is not a directory")
+        sys.exit(1)
+
+    final_output = run_task(task_dir)
+    if final_output:
+        print(f"Final report saved to final_report.md")
+
+
+if __name__ == "__main__":
+    main()
+\end{lstlisting}
+
+Minimal CLI: one positional argument, the task directory path. After the run, the task directory will contain a populated \texttt{context.json} and a \texttt{final\_report.md}.
+
+\clearpage
+\section{Setup Instructions}
+\label{appendix:quickstart}
+% ══════════════════════════════════════════════════════════════════════════════
+\subsection{1 — Install Ollama}
+% ══════════════════════════════════════════════════════════════════════════════
+
+Ollama runs large language models locally. Install it from \url{https://ollama.com/download} or via Homebrew on macOS:
+
+\begin{lstlisting}[style=shellstyle]
+# macOS with Homebrew
+brew install ollama
+\end{lstlisting}
+
+For Linux, use the official install script:
+
+\begin{lstlisting}[style=shellstyle]
+curl -fsSL https://ollama.com/install.sh | sh
+\end{lstlisting}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\subsection{2 — Start the Ollama Server}
+% ══════════════════════════════════════════════════════════════════════════════
+
+Open a \textbf{separate terminal} and start the Ollama daemon. Keep this terminal open for the duration of your session:
+
+\begin{lstlisting}[style=shellstyle]
+ollama serve
+\end{lstlisting}
+
+\begin{notebox}
+On macOS, launching the Ollama desktop app starts the server automatically. If you installed via Homebrew and prefer the CLI, \texttt{ollama serve} is the equivalent.
+\end{notebox}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\subsection{3 — Pull the Model}
+% ══════════════════════════════════════════════════════════════════════════════
+
+In your original terminal, pull the model the agent is configured to use:
+
+\begin{lstlisting}[style=shellstyle]
+ollama pull gemma4:e4b
+\end{lstlisting}
+
+This downloads the model weights to your local machine. The download is a one-time operation.
+
+\begin{notebox}
+If you prefer a different local model, pull it with \texttt{ollama pull <name>} and update the \texttt{model} argument in \texttt{agent.py} accordingly. The model must support the chat/instruct format; base models will not follow the step instructions reliably.
+\end{notebox}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\subsection{4 — Clone the Repository}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\begin{lstlisting}[style=shellstyle]
+git clone https://github.com/ProgettoLabs/report-agent.git
+cd report-agent
+\end{lstlisting}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\subsection{5 — Create and Activate a Virtual Environment}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\begin{lstlisting}[style=shellstyle]
+python3 -m venv venv
+source venv/bin/activate
+\end{lstlisting}
+
+On Windows (PowerShell):
+
+\begin{lstlisting}[style=shellstyle]
+python -m venv venv
+venv\Scripts\Activate.ps1
+\end{lstlisting}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\subsection{6 — Install Python Dependencies}
+% ══════════════════════════════════════════════════════════════════════════════
+
+The simple agent only needs two packages:
+
+\begin{lstlisting}[style=shellstyle]
+pip install langchain-core langchain-ollama
+\end{lstlisting}
+
+No other dependencies are required to run \texttt{1-langchain-agent/agent.py}.
+
+% ══════════════════════════════════════════════════════════════════════════════
+\subsection{[Optional] 7 — Create a Task Directory}
+% ══════════════════════════════════════════════════════════════════════════════
+
+The agent expects a specific directory layout. Create your task folder anywhere inside the repository (the \texttt{use-cases/} directory is conventional):
+
+\begin{lstlisting}[language={}]
+use-cases/
++-- my-task/
+    |-- agent_task_description.md  # High-level description of what the task does
+    |-- input_data.md        # The raw data the task will process
+    |-- step_01_<name>/
+    |   |-- spec.md          # What this step must do
+    |   +-- output.md        # The required output format
+    |-- step_02_<name>/
+    |   |-- spec.md
+    |   +-- output.md
+    +-- step_03_<name>/
+        |-- spec.md
+        +-- output.md
+\end{lstlisting}
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{\texttt{agent\_task\_description.md}} — a short description of the overall task goal, shown to the model at every step.
+  \item \textbf{\texttt{input\_data.md}} — the raw data fed into the task (CSV, JSON, prose, or any text format).
+  \item \textbf{\texttt{step\_NN\_<name>/}} — one directory per step, sorted lexicographically. The zero-padded numeric prefix (\texttt{01}, \texttt{02}, \ldots) determines execution order.
+  \item \textbf{\texttt{spec.md}} — instructions for the LLM describing exactly what the step should do.
+  \item \textbf{\texttt{output.md}} — the exact format the LLM must produce (with an example if helpful).
+\end{itemize}
+
+\begin{notebox}
+A working example task is included in the repository at \texttt{use-cases/1-quarterly-report/}. Inspect it to see how each file is written before creating your own.
+\end{notebox}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\subsection{8 — Run the Agent}
+% ══════════════════════════════════════════════════════════════════════════════
+
+Pass the task directory as the sole argument:
+
+\begin{lstlisting}[style=shellstyle]
+python 1-langchain-agent/agent.py use-cases/1-quarterly-report
+\end{lstlisting}
+
+The agent will print progress for each step. When it finishes, two files will have been written inside the task directory:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{\texttt{context.json}} — the full output of every step, keyed by step directory name.
+  \item \textbf{\texttt{final\_report.md}} — a verbatim copy of the last step's output.
+\end{itemize}
+
+\begin{warnbox}
+Make sure the Ollama server from Step 2 is still running before executing the agent. If the connection is refused, restart \texttt{ollama serve} in its terminal.
+\end{warnbox}
+
+\clearpage
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Example: Quarterly Report Task}
+\label{appendix:example}
+% ══════════════════════════════════════════════════════════════════════════════
+
+The following is a complete, ready-to-use example of a five-step task that generates a quarterly business report. All file contents are shown in full. Use this as a template or starting point for your own tasks.
+
+\subsection{Directory structure}
+
+\begin{lstlisting}
+quarterly_report/
+|-- agent_task_description.md
+|-- input_data.md
+|-- context.json                      (written at runtime)
+|-- step_01_data_gathering/
+|   |-- spec.md
+|   +-- output.md
+|-- step_02_analysis/
+|   |-- spec.md
+|   +-- output.md
+|-- step_03_narrative/
+|   |-- spec.md
+|   +-- output.md
+|-- step_04_visualizations/
+|   |-- spec.md
+|   +-- output.md
++-- step_05_pdf_generation/
+    |-- spec.md
+    +-- output.md
+\end{lstlisting}
+
+\subsection{\texttt{agent\_task\_description.md}}
+
+\begin{lstlisting}[language={}]
+# Task: Quarterly Business Report
+
+## Overview
+This task produces a polished quarterly business report for company
+leadership. It gathers raw financial and operational data, analyses
+performance against prior quarters, drafts a narrative executive summary,
+generates supporting chart descriptions, and compiles everything into a
+LaTeX source file ready for PDF compilation.
+
+## Audience
+Senior leadership and board members. The tone should be professional,
+precise, and data-driven. Assume familiarity with business metrics but
+not with the underlying data systems.
+
+## Agent Instructions
+- Before starting each step, read `context.json` in this directory.
+- Find the entry for the most recently completed step.
+- The content is available directly in the `content` field.
+- After completing each step, update `context.json` with the step's
+  output before moving on.
+- Do not skip steps or reorder them. Each step depends on the output
+  of the previous one.
+\end{lstlisting}
+
+\subsection{\texttt{input\_data.md}}
+
+\begin{lstlisting}[language={}]
+# Input Data: Quarterly Business Report
+
+## Company
+- **Company name:** Acme Corp
+
+## Report Period
+- **Current quarter:** Q3 2025
+- **Comparison quarter:** Q3 2024
+
+## Revenue by Product Line
+| Product Line | Current Quarter (USD) | Prior Year Quarter (USD) |
+|---|---|---|
+| Product Line A | 4,200,000 | 3,800,000 |
+| Product Line B | 1,750,000 | 1,600,000 |
+
+## Revenue by Region
+| Region | Current Quarter (USD) | Prior Year Quarter (USD) |
+|---|---|---|
+| EMEA | 3,100,000 | 2,900,000 |
+| APAC | 2,850,000 | 2,500,000 |
+
+## Operating Expenses by Department
+| Department | Current Quarter (USD) | Prior Year Quarter (USD) |
+|---|---|---|
+| Engineering        |   980,000 |   870,000 |
+| Sales & Marketing  | 1,200,000 | 1,050,000 |
+| General & Admin    |   430,000 |   410,000 |
+
+## Customer Metrics
+| Metric | Current Quarter | Prior Year Quarter |
+|---|---|---|
+| Active customers           | 4,821 | 4,102 |
+| New customers acquired     |   387 |   310 |
+| Churned customers          |    94 |    88 |
+| Net revenue retention (%)  |   112 |   108 |
+\end{lstlisting}
+
+\subsection{Step 1 --- Data gathering}
+
+\subsubsection{\texttt{step\_01\_data\_gathering/spec.md}}
+
+\begin{lstlisting}[language={}]
+# Step 1: Data Gathering
+
+## Objective
+Collect all financial and operational data required for this quarter's
+report. The output should be a single structured dataset covering
+revenue, expenses, headcount, and customer metrics, ready for analysis
+in the next step.
+
+## Guidelines
+- Gather revenue figures broken down by product line and by region.
+- Gather total operating expenses broken down by department.
+- Gather headcount figures: total employees at start and end of quarter,
+  new hires, and departures.
+- Gather customer metrics: total active customers, new customers
+  acquired, churned customers, and net revenue retention rate.
+- All figures should cover the current quarter and the same quarter
+  from the prior year, to enable year-on-year comparison.
+- If any data point is unavailable, record it as null and add a note
+  explaining what is missing.
+- Do not include any personally identifiable information. Aggregate only.
+- Validate that revenue figures sum correctly across product lines and
+  regions. If they do not match, flag the discrepancy.
+\end{lstlisting}
+
+\subsubsection{\texttt{step\_01\_data\_gathering/output.md}}
+
+\begin{lstlisting}[language={}]
+# Output: Step 1
+
+## Format
+- **Type:** text
+- **Structure:** A CSV-formatted text block with one row per metric.
+  Columns: `category`, `subcategory`, `current_quarter`,
+  `prior_year_quarter`, `unit`, `notes`.
+
+## Example
+category,subcategory,current_quarter,prior_year_quarter,unit,notes
+revenue,product_line_A,4200000,3800000,USD,
+revenue,product_line_B,1750000,1600000,USD,
+revenue,region_EMEA,3100000,2900000,USD,
+revenue,region_APAC,2850000,2500000,USD,
+expenses,engineering,980000,870000,USD,
+expenses,sales_and_marketing,1200000,1050000,USD,
+expenses,general_and_admin,430000,410000,USD,
+headcount,total_start_of_quarter,312,287,people,
+headcount,total_end_of_quarter,328,299,people,
+headcount,new_hires,24,18,people,
+headcount,departures,8,6,people,
+customers,active,4821,4102,accounts,
+customers,new_acquired,387,310,accounts,
+customers,churned,94,88,accounts,
+customers,net_revenue_retention,112,108,percent,
+\end{lstlisting}
+
+\subsection{Step 2 --- Analysis}
+
+\subsubsection{\texttt{step\_02\_analysis/spec.md}}
+
+\begin{lstlisting}[language={}]
+# Step 2: Analysis
+
+## Objective
+Analyse the dataset from the previous step to identify key performance
+trends, notable achievements, and areas of concern. Produce a structured
+summary of findings that the narrative step can draw from.
+
+## Guidelines
+- Calculate year-on-year percentage change for every metric that has
+  both a current and prior year value.
+- Identify the top two growth areas and the bottom two growth areas by
+  percentage change.
+- Flag any metric where the year-on-year change exceeds 20% in either
+  direction as a significant movement requiring comment.
+- Calculate total revenue and total operating expenses for the quarter,
+  and derive operating profit and operating margin.
+- Calculate customer growth rate and churn rate as percentages.
+- Do not make assumptions about causes. Record what the data shows, not
+  why it may have happened. Narrative interpretation happens in step 3.
+- If any metric was recorded as null in step 1, exclude it from
+  calculations and note the exclusion.
+\end{lstlisting}
+
+\subsubsection{\texttt{step\_02\_analysis/output.md}}
+
+\begin{lstlisting}[language={}]
+# Output: Step 2
+
+## Format
+- **Type:** text
+- **Structure:** A structured markdown-formatted text block with clearly
+  labelled sections for each analysis area. Include a summary table of
+  all year-on-year changes, followed by a flagged items list.
+
+## Example
+## Financial summary
+| Metric                   | Current Q | Prior Y Q | YoY Change |
+|--------------------------|-----------|-----------|------------|
+| Total revenue            | $5.95M    | $5.40M    | +10.2%     |
+| Total operating expenses | $2.61M    | $2.33M    | +12.0%     |
+| Operating profit         | $3.34M    | $3.07M    | +8.8%      |
+| Operating margin         | 56.1%     | 56.9%     | -0.8pp     |
+
+## Top growth areas
+1. Headcount / new hires: +33.3% YoY
+2. Revenue / product line A: +10.5% YoY
+
+## Areas of concern
+1. Expenses / sales and marketing: +14.3% YoY (outpacing revenue growth)
+2. Customer churn: +6.8% YoY
+
+## Flagged items (>20% YoY movement)
+- None this quarter. All movements within normal range.
+
+## Customer metrics
+- Customer growth rate: 9.2%
+- Churn rate: 1.9%
+- Net revenue retention: 112% (+4pp YoY)
+\end{lstlisting}
+
+\subsection{Step 3 --- Narrative}
+
+\subsubsection{\texttt{step\_03\_narrative/spec.md}}
+
+\begin{lstlisting}[language={}]
+# Step 3: Narrative
+
+## Objective
+Write a professional executive summary that interprets the analysis from
+the previous step and tells a coherent story about the company's
+performance this quarter.
+
+## Guidelines
+- The executive summary should be between 350 and 500 words.
+- Open with a one-paragraph overview of overall performance.
+- Follow with a paragraph on revenue and profitability.
+- Follow with a paragraph on customer growth and retention.
+- Follow with a paragraph on headcount and operational capacity.
+- Close with a brief outlook paragraph that notes the areas flagged in
+  the analysis as requiring attention, without making forward-looking
+  financial predictions.
+- The tone should be confident, factual, and measured. Avoid superlatives
+  like "exceptional" or "outstanding." Let the numbers speak.
+- Do not include any numbers that were not present in the analysis step.
+  Do not invent context.
+- Use the company name placeholder "[Company]" throughout.
+- Format the document with a title, date placeholder, and clear section
+  headings.
+\end{lstlisting}
+
+\subsubsection{\texttt{step\_03\_narrative/output.md}}
+
+\begin{lstlisting}[language={}]
+# Output: Step 3
+
+## Format
+- **Type:** text
+- **Structure:** A markdown document with a title, a date line, and four
+  to five sections, each with a heading. No tables --- prose only.
+
+## Example
+# Quarterly Executive Summary
+**Period:** Q3 2025 | **Prepared:** October 2025
+
+## Overview
+[Company] delivered steady growth in Q3 2025, with total revenue reaching
+$5.95 million, a 10.2% increase over the same quarter last year.
+Operating profit grew by 8.8% to $3.34 million, reflecting continued
+investment in sales capacity. Customer retention remained strong, with
+net revenue retention of 112%.
+
+## Revenue and profitability
+Revenue growth was led by Product Line A, which grew 10.5% year-on-year
+to $4.20 million. Operating expenses grew at 12.0%, slightly ahead of
+revenue growth, driven primarily by an increase in sales and marketing
+spend. Operating margin contracted modestly from 56.9% to 56.1%.
+
+## Customer growth and retention
+[Company] ended the quarter with 4,821 active customers, representing
+9.2% growth year-on-year. Net revenue retention of 112% indicates that
+existing customers continue to expand their usage. The quarterly churn
+rate of 1.9% remains within historical norms, though churn volume
+increased 6.8% versus the prior year and warrants monitoring.
+
+## Headcount and capacity
+The company added 24 net new employees during the quarter, ending at
+328 total headcount. This represents 10.4% headcount growth year-on-year,
+broadly in line with revenue growth.
+
+## Areas for attention
+Sales and marketing expense growth of 14.3% outpaced revenue growth of
+10.2% this quarter. Leadership should assess whether current sales
+capacity investments are on track to deliver expected pipeline returns
+in coming quarters.
+\end{lstlisting}
+
+\subsection{Step 4 --- Visualizations}
+
+\subsubsection{\texttt{step\_04\_visualizations/spec.md}}
+
+\begin{lstlisting}[language={}]
+# Step 4: Visualizations
+
+## Objective
+Produce Python code using matplotlib that generates four charts
+representing the key findings from the analysis step. Also carry forward
+the executive summary from step 3 so both are available to step 5.
+
+## Guidelines
+- Produce exactly four self-contained matplotlib scripts, one per chart.
+- Chart 1: A bar chart comparing total revenue and total operating
+  expenses for the current quarter versus the prior year quarter.
+  Title: "Revenue and expenses: current vs. prior year."
+- Chart 2: A bar chart showing year-on-year change (%) for each revenue
+  subcategory (product lines and regions).
+  Title: "Revenue growth by segment."
+- Chart 3: A bar chart showing active customers, new customers acquired,
+  and churned customers for the current quarter.
+  Title: "Customer movement this quarter."
+- Chart 4: A grouped bar chart showing net revenue retention rate for
+  the current quarter versus the prior year.
+  Title: "Net revenue retention."
+- Each script should save its chart as a PNG file using the filenames
+  specified in output.md.
+- Use a clean, professional colour palette. Avoid decorative elements.
+- After the chart scripts, include the full executive summary text from
+  step 3 verbatim.
+\end{lstlisting}
+
+\subsubsection{\texttt{step\_04\_visualizations/output.md}}
+
+\begin{lstlisting}[language={}]
+# Output: Step 4
+
+## Format
+- **Type:** text
+- **Structure:** Four Python code blocks (one per chart), each labelled
+  with the filename it produces, followed by a section containing the
+  full executive summary from step 3.
+
+## Example (abbreviated)
+### chart_01_revenue_expenses.py
+```python
+import matplotlib.pyplot as plt
+labels = ['Revenue', 'Expenses']
+current = [5.95, 2.61]
+prior = [5.40, 2.33]
+x = range(len(labels))
+fig, ax = plt.subplots()
+ax.bar([i - 0.2 for i in x], prior, 0.4, label='Prior year')
+ax.bar([i + 0.2 for i in x], current, 0.4, label='Current quarter')
+ax.set_title('Revenue and expenses: current vs. prior year')
+ax.set_ylabel('USD millions')
+ax.legend()
+plt.tight_layout()
+plt.savefig('chart_01_revenue_expenses.png', dpi=150)
+```
+
+[... charts 2, 3, and 4 follow the same pattern ...]
+
+### Executive Summary
+[Full text of the executive summary from step 3]
+\end{lstlisting}
+
+\subsection{Step 5 --- PDF generation}
+
+\subsubsection{\texttt{step\_05\_pdf\_generation/spec.md}}
+
+\begin{lstlisting}[language={}]
+# Step 5: PDF Generation
+
+## Objective
+Compile all outputs from step 4 into a single, well-structured LaTeX
+source file. The output is a `.tex` file that a user can compile with
+a standard LaTeX compiler to produce the final quarterly report PDF.
+
+## Guidelines
+- Read the step 4 output. It contains four Python chart scripts and the
+  full executive summary text.
+- Structure the LaTeX document as follows, in this order:
+    1. Title page with report title, quarter, and date
+    2. Table of contents
+    3. Executive summary section (content from step 4 output)
+    4. Charts section, with one \includegraphics per chart and a caption
+- Assume the chart PNG files have been generated from the step 4 scripts
+  and are located in the same directory, named as specified in step 4.
+- Use the `graphicx` package to embed images.
+- Use \section and \subsection headings consistently.
+- Do not introduce any data, figures, or content beyond what step 4
+  provided. The executive summary and chart files are the complete source.
+- The document class should be `article` with A4 paper and 2.5cm margins.
+- The output should be self-contained and compilable with pdflatex.
+\end{lstlisting}
+
+\subsubsection{\texttt{step\_05\_pdf\_generation/output.md}}
+
+\begin{lstlisting}[language={}]
+# Output: Step 5
+
+## Format
+- **Type:** text
+- **Structure:** A complete, compilable LaTeX source file as a text block.
+
+## Example (abbreviated structure)
+\documentclass[12pt, a4paper]{article}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{hyperref}
+
+\title{Quarterly Business Report \\ Q3 2025}
+\date{October 2025}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+\section{Executive Summary}
+% Prose from step 3 goes here.
+
+\section{Charts}
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.85\textwidth]{chart_01_revenue_expenses.png}
+\caption{Revenue and expenses: current vs.\ prior year}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.85\textwidth]{chart_02_revenue_growth.png}
+\caption{Revenue growth by segment}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.85\textwidth]{chart_03_customer_movement.png}
+\caption{Customer movement this quarter}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.85\textwidth]{chart_04_net_revenue_retention.png}
+\caption{Net revenue retention}
+\end{figure}
+
+\end{document}
+\end{lstlisting}
+
+\end{document}

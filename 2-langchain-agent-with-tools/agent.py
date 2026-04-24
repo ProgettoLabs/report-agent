@@ -29,8 +29,8 @@ from utils import PIPELINE_DIR
 SYSTEM_PROMPT = """\
 You are an AI assistant executing one step of a multi-step data pipeline.
 
-## Pipeline Overview
-{pipeline_md}
+## Task Overview
+{agent_task_description}
 
 ## Your Current Step: {step_name}  (step_number={step_number})
 
@@ -69,7 +69,7 @@ def read_file(path: Path) -> str:
 # Per-step agent run
 # ---------------------------------------------------------------------------
 
-def run_step(step_dir: Path, pipeline_md: str, llm: ChatOllama) -> None:
+def run_step(step_dir: Path, agent_task_description: str, llm: ChatOllama) -> None:
     step_number = int(step_dir.name.split("_")[1])
     step_name = step_dir.name
 
@@ -85,7 +85,7 @@ def run_step(step_dir: Path, pipeline_md: str, llm: ChatOllama) -> None:
         ("human", "{input}"),
         ("placeholder", "{agent_scratchpad}"),
     ]).partial(
-        pipeline_md=pipeline_md,
+        agent_task_description=agent_task_description,
         step_name=step_name,
         step_number=step_number,
         spec=spec,
@@ -110,7 +110,7 @@ def run_step(step_dir: Path, pipeline_md: str, llm: ChatOllama) -> None:
 
 def run_pipeline(pipeline_dir: str) -> None:
     root = Path(pipeline_dir).resolve()
-    pipeline_md = read_file(root / "pipeline.md")
+    agent_task_description = read_file(root / "agent_task_description.md")
     steps = discover_steps(root)
 
     if not steps:
@@ -127,7 +127,7 @@ def run_pipeline(pipeline_dir: str) -> None:
     llm = ChatOllama(model="gemma4", num_ctx=65536, temperature=0)
 
     for step_dir in steps:
-        run_step(step_dir, pipeline_md, llm)
+        run_step(step_dir, agent_task_description, llm)
 
     print(f"\nPipeline complete. Results in {root / 'context.json'}")
 

@@ -32,11 +32,11 @@ def read_file(path: Path) -> str:
     return path.read_text() if path.exists() else ""
 
 
-def build_system_prompt(pipeline_md: str, spec: str, output_format: str) -> str:
+def build_system_prompt(agent_task_description: str, spec: str, output_format: str) -> str:
     return (
-        "You are an AI assistant executing one step of a multi-step pipeline.\n\n"
-        "## Pipeline Overview\n"
-        f"{pipeline_md}\n\n"
+        "You are an AI assistant executing one step of a multi-step task.\n\n"
+        "## Task Overview\n"
+        f"{agent_task_description}\n\n"
         "## Your Task\n"
         f"{spec}\n\n"
         "## Required Output Format\n"
@@ -80,7 +80,7 @@ def save_final_report(root: Path, content: str) -> Path:
 
 def run_step(
     step_dir: Path,
-    pipeline_md: str,
+    agent_task_description: str,
     input_data: str,
     previous_outputs: dict[str, str],
     context: dict,
@@ -94,7 +94,7 @@ def run_step(
     spec = read_file(step_dir / "spec.md")
     output_format = read_file(step_dir / "output.md")
 
-    system_prompt = build_system_prompt(pipeline_md, spec, output_format)
+    system_prompt = build_system_prompt(agent_task_description, spec, output_format)
     user_content = build_user_content(input_data, previous_outputs)
 
     response = llm.invoke([
@@ -118,7 +118,7 @@ def run_pipeline(pipeline_dir: str) -> str:
     """Execute the full pipeline and return the final step's output."""
     root = Path(pipeline_dir).resolve()
 
-    pipeline_md = read_file(root / "pipeline.md")
+    agent_task_description = read_file(root / "agent_task_description.md")
     input_data = read_file(root / "input_data.md")
 
     steps = discover_steps(root)
@@ -137,7 +137,7 @@ def run_pipeline(pipeline_dir: str) -> str:
 
     for step_dir in steps:
         step_output = run_step(
-            step_dir, pipeline_md, input_data, previous_outputs, context, context_path, llm
+            step_dir, agent_task_description, input_data, previous_outputs, context, context_path, llm
         )
         previous_outputs[step_dir.name] = step_output
 
