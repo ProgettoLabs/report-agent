@@ -1,0 +1,680 @@
+\documentclass[12pt, a4paper]{article}
+
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{mdframed}
+\usepackage{parskip}
+\usepackage{microtype}
+
+\definecolor{primary}{HTML}{1D9E75}
+\definecolor{secondary}{HTML}{534AB7}
+\definecolor{codebg}{HTML}{F5F5F0}
+\definecolor{codeborder}{HTML}{D3D1C7}
+\definecolor{notebg}{HTML}{E1F5EE}
+\definecolor{noteborder}{HTML}{0F6E56}
+\definecolor{warnbg}{HTML}{FAEEDA}
+\definecolor{warnborder}{HTML}{854F0B}
+\definecolor{darktext}{HTML}{2C2C2A}
+\definecolor{mutedtext}{HTML}{5F5E5A}
+\definecolor{pykeyword}{HTML}{0F6E56}
+\definecolor{pystring}{HTML}{BA7517}
+\definecolor{pycomment}{HTML}{7F7D75}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=secondary,
+  urlcolor=primary,
+  citecolor=primary,
+  pdftitle={Week 1 Report Agent Guide},
+  pdfauthor={}
+}
+
+\titleformat{\section}{\Large\bfseries\color{darktext}}{}{0em}{}[\color{primary}\titlerule]
+\titleformat{\subsection}{\large\bfseries\color{darktext}}{}{0em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{mutedtext}}{}{0em}{}
+\titlespacing{\section}{0pt}{2em}{0.8em}
+\titlespacing{\subsection}{0pt}{1.4em}{0.4em}
+\titlespacing{\subsubsection}{0pt}{1em}{0.3em}
+
+\lstdefinestyle{plainstyle}{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small\color{darktext},
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{codeborder},
+  framesep=8pt,
+  showstringspaces=false,
+  tabsize=2
+}
+
+\lstdefinestyle{pythonstyle}{
+  language=Python,
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small\color{darktext},
+  keywordstyle=\color{pykeyword}\bfseries,
+  stringstyle=\color{pystring},
+  commentstyle=\color{pycomment}\itshape,
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{codeborder},
+  framesep=8pt,
+  showstringspaces=false,
+  tabsize=4,
+  numbers=left,
+  numbersep=8pt
+}
+
+\lstdefinestyle{shellstyle}{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small\color{darktext},
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{codeborder},
+  framesep=8pt,
+  showstringspaces=false,
+  tabsize=2,
+  morekeywords={python,pip,source,ollama,cd}
+}
+
+\newmdenv[
+  backgroundcolor=notebg,
+  linecolor=noteborder,
+  linewidth=3pt,
+  topline=false,
+  bottomline=false,
+  rightline=false,
+  innerleftmargin=12pt,
+  innerrightmargin=12pt,
+  innertopmargin=8pt,
+  innerbottommargin=8pt
+]{notebox}
+
+\newmdenv[
+  backgroundcolor=warnbg,
+  linecolor=warnborder,
+  linewidth=3pt,
+  topline=false,
+  bottomline=false,
+  rightline=false,
+  innerleftmargin=12pt,
+  innerrightmargin=12pt,
+  innertopmargin=8pt,
+  innerbottommargin=8pt
+]{warnbox}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{mutedtext}Week 1 Report Agent}
+\fancyfoot[C]{\small\color{mutedtext}\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{codeborder}\leaders\hrule height \headrulewidth\hfill}}
+
+\begin{document}
+
+\begin{titlepage}
+  \centering
+  \vspace*{3cm}
+  {\color{primary}\rule{\linewidth}{2pt}}
+  \vspace{1cm}
+
+  {\Huge\bfseries\color{darktext} Week 1: Local Report Agent}\\[0.5em]
+  {\Large\color{mutedtext} File-system pipeline runner with LangChain and Ollama}
+
+  \vspace{1cm}
+  {\color{primary}\rule{\linewidth}{2pt}}
+
+  \vspace{2cm}
+  {\large\color{mutedtext}
+    A practical guide to the \texttt{week-1/agent.py} implementation\\
+    and the use-case folder format it executes.
+  }
+
+  \vfill
+  {\small\color{mutedtext} Version 1.0}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+\section{Introduction}
+
+\subsection{The problem: repetitive knowledge work}
+
+Imagine you are an analyst at a corporation. Every quarter, your manager asks you to produce a report on the company's performance. The raw numbers change -- revenue, headcount, customer counts, expenses -- but the \textit{shape} of the job does not. You have done it before, and you will do it again next quarter, and the quarter after that.
+
+If you stopped and wrote down exactly how you do it, it might look something like this:
+
+\begin{enumerate}[leftmargin=1.5em]
+  \item \textbf{Gather the data.} Pull revenue figures from finance. Pull customer numbers from the CRM. Pull headcount from HR. Put it all in one spreadsheet.
+  \item \textbf{Analyse it.} Calculate year-on-year changes. Work out margins. Flag anything that moved more than 20\% in either direction.
+  \item \textbf{Write the story.} Draft an executive summary that explains what the numbers mean. Open with overall performance, then drill into revenue, customers, and headcount. Close with anything leadership should pay attention to.
+  \item \textbf{Assemble the report.} Put the executive summary, analysis tables, and supporting detail into one document with consistent headings and formatting.
+\end{enumerate}
+
+Four steps. Each one depends on the one before it: you cannot analyse data you have not gathered, you cannot write about an analysis you have not done, and you cannot assemble a report from pieces that do not exist. When Q4 rolls around you do not invent a new process -- you run the same steps with fresh numbers.
+
+\begin{notebox}
+\textbf{This is the pattern we are going to automate.} Not the thinking that goes into designing the process -- that stays with you -- but the mechanical execution of each step, once the recipe is written down.
+\end{notebox}
+
+\subsection{A first instinct: ``just ask ChatGPT''}
+
+A natural reaction is to open a chat window, paste in all the raw data, and type: \textit{``Write me a quarterly business report.''} Sometimes this works. More often, a few things go wrong:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{The model skips work.} It might produce a narrative without ever doing the year-on-year calculations, so the numbers in the prose do not actually reconcile with the input.
+  \item \textbf{It invents details.} With no instruction about what \textit{not} to say, it may add fictional commentary about market conditions or competitor activity.
+  \item \textbf{The output format drifts.} One run gives you a markdown report; the next gives you bullet points; the next gives you a different section order. You cannot plug it into a consistent workflow.
+  \item \textbf{It is unrepeatable.} Next quarter you will write the same sprawling prompt from scratch and get a subtly different result.
+\end{itemize}
+
+The problem is not that the model is incapable. The problem is that you gave it the whole job in one swing, with no structure, no checkpoints, and no clear definition of what ``done'' looks like at each stage.
+
+\subsection{The key idea: break the job into small, well-defined steps}
+
+Look again at the four-step list above. Notice that each step has three things you could write down on paper:
+
+\begin{enumerate}[leftmargin=1.5em]
+  \item \textbf{A goal.} What am I trying to produce in this step? (``A clean dataset of all the quarter's metrics.'')
+  \item \textbf{Some guidelines.} What rules must I follow? (``Include year-on-year comparisons. Do not include personally identifiable information.'')
+  \item \textbf{A target format.} What does my output look like when I am done? (``A markdown table with these specific columns.'')
+\end{enumerate}
+
+If you can write those three things clearly for one step, you can hand that step to anyone -- a junior colleague, an intern, or, as it turns out, a language model -- and expect a usable result. You do not need to explain \textit{how} to do the step. You just need to specify the goal, the rules, and the shape of the output.
+
+\subsection{From a list of steps to a runnable pipeline}
+
+Now take that list of steps and give each one its own folder on your computer. Inside each folder, put two short text files:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \texttt{spec.md} -- the goal and the guidelines for this step.
+  \item \texttt{output.md} -- the required format, with an example.
+\end{itemize}
+
+At the top level, alongside the step folders, put one file with the raw numbers for this quarter (\texttt{input\_data.md}) and one file with a short description of the overall task (\texttt{agent\_task\_description.md}).
+
+That is the whole setup. You have turned a vague ``write the quarterly report'' ask into a stack of small, individually-reviewable instructions. Anyone can read the folder and understand what the pipeline does, because it is all plain English.
+
+\begin{notebox}
+\textbf{The framework is the execution layer.} Once your step folders exist, a small Python script walks through them in order, hands each one's instructions to a language model, and threads the outputs together. In Week 1, the script reads those files directly from disk. The design work -- deciding what the steps are and what each one should produce -- is the part that requires your judgment. The script just runs the recipe.
+\end{notebox}
+
+\subsection{Why this approach works}
+
+Three practical benefits fall out of organising the work this way:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{Repeatability.} Next quarter you replace \texttt{input\_data.md} and run the pipeline again. The specs and output formats do not change. You get the same shape of report every time.
+  \item \textbf{Reviewability.} If the final report looks wrong, you do not have to debug a giant prompt. You can open \texttt{context.json} and see exactly where the pipeline went off-course -- was the data wrong, the analysis wrong, or the narrative wrong?
+  \item \textbf{Reusability.} The analysis step you wrote for the quarterly report can be copied into a monthly report, a board-pack pipeline, or an investor update. The specs describe the work, not the context around it.
+\end{itemize}
+
+\subsection{Where this can go next}
+
+The Week 1 pipeline is deliberately the simplest thing that works: steps run one after another, the agent reads local files, and a human kicks the whole thing off. That is enough for the quarterly report, but it is not the whole story.
+
+In Week 2, you add MCP so the same assets can be exposed as resources instead of being read only as local files. Later versions could add tools, remote data sources, hosted execution, or scheduled runs. The important point is that the step design does not need to change just because the execution environment becomes more capable.
+
+In Week 3, we would look at a final extension using OpenClaw which would allow autonomous agents to schedule and run our scripts at our convenience.
+
+\clearpage
+
+\section{Framework Design}
+
+\subsection{The Agent Runner}
+
+In Week 1 you build a small agent runner that executes a repeatable report-writing workflow. The runner receives a single command-line argument, such as \texttt{"quarterly report"}, lists the available use cases, and asks the language model to resolve that input to the closest exact folder name.
+
+The Week 1 agent reads everything from the local file system:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item The available workflows live in \texttt{use-cases/}.
+  \item Each workflow has an overview file, an input data file, and numbered step folders.
+  \item Each step folder contains \texttt{spec.md} and \texttt{output.md}.
+  \item The agent calls a local Ollama model through LangChain for each step.
+  \item The agent writes step results to \texttt{context.json} and saves the last result as \texttt{final\_report.md}.
+\end{itemize}
+
+After the use case is resolved, the execution flow is:
+
+\begin{enumerate}[leftmargin=1.5em]
+  \item Read \texttt{agent\_task\_description.md} for the overall task.
+  \item Read \texttt{input\_data.md} for the raw input of this run.
+  \item Discover the ordered \texttt{step\_NN\_*} directories.
+  \item For each step, read \texttt{spec.md} and \texttt{output.md}.
+  \item Build the LangChain messages, call the local Ollama model, and record the response.
+  \item Write the step output to \texttt{context.json}.
+  \item Move to the next step, passing all prior outputs as additional context.
+\end{enumerate}
+
+\begin{notebox}
+\textbf{Core idea:} the intelligence of the workflow is mostly in the use-case files, not in Python code. The Python script is the execution layer. It discovers the steps, builds the prompts, calls the model, and records the outputs.
+\end{notebox}
+
+\subsection{State and Context}
+
+State flows between steps through two structures. During the run, \texttt{previous\_outputs} holds the completed step outputs in memory so they can be included in later prompts. After each step completes, the same output is written to \texttt{context.json} for persistence and inspection.
+
+Every output is stored as plain text directly in \texttt{context.json}. If a step produces a long markdown document, the entire text is stored in the \texttt{content} field. This keeps the runtime state easy to inspect.
+
+\begin{warnbox}
+The runner passes \textit{all} prior step outputs into every subsequent step's prompt. This means the prompt size grows linearly with the number of steps. For very long tasks with verbose outputs, you may need to raise the model's context window (\texttt{num\_ctx}) or keep individual step outputs concise.
+\end{warnbox}
+
+\section{Directory Structure}
+
+The runner expects this repository-level layout:
+
+\begin{lstlisting}[style=plainstyle]
+report-agent/
+|-- week-1/
+|   +-- agent.py
+|
++-- use-cases/
+    +-- quarterly-report/
+        |-- agent_task_description.md
+        |-- input_data.md
+        |-- context.json          (written at runtime)
+        |-- final_report.md       (written at runtime)
+        |
+        |-- step_01_data_structuring/
+        |   |-- spec.md
+        |   +-- output.md
+        |
+        |-- step_02_analysis/
+        |   |-- spec.md
+        |   +-- output.md
+        |
+        |-- step_03_narrative/
+        |   |-- spec.md
+        |   +-- output.md
+        |
+        +-- step_04_report_assembly/
+            |-- spec.md
+            +-- output.md
+\end{lstlisting}
+
+The \texttt{step\_NN\_*} naming convention matters. The script sorts step directories by the number after \texttt{step\_}. This is how it knows that data structuring runs before analysis, and analysis runs before narrative.
+
+\begin{warnbox}
+If a step directory does not start with \texttt{step\_}, the Week 1 runner ignores it. If the number after \texttt{step\_} is not an integer, sorting will fail.
+\end{warnbox}
+
+\section{File Specifications}
+
+\subsection{\texttt{agent\_task\_description.md}}
+
+This file explains the overall workflow. It gives the model stable context that applies to every step. In the quarterly report example, it says that the pipeline produces a polished report for Acme Corp, describes the audience, and sets a professional, data-driven tone.
+
+Use this file for instructions that should apply throughout the pipeline, such as:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item what the workflow produces,
+  \item who the output is for,
+  \item the expected tone or quality bar,
+  \item any constraints that apply to every step.
+\end{itemize}
+
+\subsection{\texttt{input\_data.md}}
+
+This file contains the raw data for the current run. For the quarterly report, it includes the company name, report period, revenue tables, expense tables, headcount, and customer metrics.
+
+The runner includes \texttt{input\_data.md} in every step prompt. This means later steps can still refer back to the source data even after previous step outputs have been added to the context.
+
+\subsection{\texttt{spec.md}}
+
+Every step has a \texttt{spec.md}. This is the instruction sheet for that one step. It should include a clear objective and concrete guidelines.
+
+For example, the first step in \texttt{quarterly-report} structures the data. Its specification says to preserve values exactly, organise the output into named sections, validate revenue totals, and avoid personally identifiable information.
+
+\subsection{\texttt{output.md}}
+
+Every step also has an \texttt{output.md}. This tells the model what shape the answer must have. The file should be specific enough that the next step can rely on the structure.
+
+The output file usually contains:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item the output type,
+  \item the required sections or schema,
+  \item a realistic example.
+\end{itemize}
+
+\begin{notebox}
+\textbf{Why examples matter:} language models follow concrete examples better than abstract format descriptions. A good \texttt{output.md} reduces drift between runs.
+\end{notebox}
+
+\clearpage
+
+\section{Building Your Own Use Case}
+
+To create a new Week 1 workflow:
+
+\begin{enumerate}[leftmargin=1.5em]
+  \item \textbf{Define the end product.} What does the task produce? Be specific: a markdown report, a structured data table, a draft article?
+  \item \textbf{Work backwards to identify steps.} Starting from the final output, ask what the last step needs as input. Then ask the same for the second-to-last step, and so on.
+  \item \textbf{Name each step clearly.} Use a short descriptive name that makes the directory self-explanatory: \texttt{step\_01\_data\_structuring}, \texttt{step\_02\_analysis}, not \texttt{step\_01\_a}.
+  \item \textbf{Write \texttt{agent\_task\_description.md} first.} A clear task overview helps you stay consistent when writing step specifications.
+  \item \textbf{Prepare \texttt{input\_data.md}.} Collect the raw data the task will operate on. This file is the main thing you update between runs.
+  \item \textbf{Write \texttt{spec.md} for each step.} Focus on the objective and guidelines. If someone read only this file, they should understand what the step must do.
+  \item \textbf{Write \texttt{output.md} for each step.} Make the example complete and realistic. It is one of the strongest controls you have over model output.
+  \item \textbf{Reference previous steps explicitly.} When a step depends on a prior step's output, say so in its \texttt{spec.md} guidelines.
+\end{enumerate}
+
+\subsection{Checklist for each step directory}
+
+\begin{itemize}[leftmargin=1.5em]
+  \item Directory is named with a zero-padded numeric prefix.
+  \item \texttt{spec.md} has both an objective and guidelines.
+  \item Guidelines are specific and actionable, not vague.
+  \item \texttt{output.md} describes the required structure.
+  \item \texttt{output.md} includes a realistic example.
+  \item Dependencies on previous step outputs are stated clearly.
+\end{itemize}
+
+\clearpage
+
+\appendix
+\renewcommand{\thesection}{\Alph{section}}
+\titleformat{\section}{\Large\bfseries\color{darktext}}{Annex \thesection\ --\ }{0em}{}[\color{primary}\titlerule]
+
+\section{Code Walkthrough}
+
+\subsection{Imports and configuration}
+
+\begin{lstlisting}[style=pythonstyle]
+import asyncio
+import json
+import sys
+from pathlib import Path
+
+from langchain_ollama import ChatOllama
+from langchain_core.messages import HumanMessage, SystemMessage
+
+USE_CASES_DIR = Path(__file__).parent.parent / "use-cases"
+\end{lstlisting}
+
+The Week 1 script uses:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \texttt{asyncio} so the top-level pipeline can be written as async functions.
+  \item \texttt{json} to write \texttt{context.json}.
+  \item \texttt{Path} to work with local files and directories.
+  \item \texttt{ChatOllama} to call a local model through LangChain.
+  \item \texttt{SystemMessage} and \texttt{HumanMessage} to build chat-style prompts.
+\end{itemize}
+
+\subsection{Reading local assets}
+
+\begin{lstlisting}[style=pythonstyle]
+async def fetch_asset(path: Path) -> str:
+    return path.read_text() if path.exists() else ""
+\end{lstlisting}
+
+\texttt{fetch\_asset} is intentionally simple in Week 1. It reads a local file if it exists and returns an empty string otherwise. In Week 2 this helper becomes more important because the agent will be able to read through either the file system or MCP.
+
+\subsection{Discovering steps}
+
+\begin{lstlisting}[style=pythonstyle]
+async def fetch_steps(use_case: str) -> list[str]:
+    use_case_dir = USE_CASES_DIR / use_case
+    return sorted(
+        (d.name for d in use_case_dir.iterdir() if d.is_dir() and d.name.startswith("step_")),
+        key=lambda name: int(name.split("_")[1]),
+    )
+\end{lstlisting}
+
+This function lists the step folders for one use case and sorts them numerically. The agent does not hard-code the four quarterly report steps. If you add \texttt{step\_05\_*}, the runner will include it automatically.
+
+\subsection{Resolving the use case}
+
+The command-line argument does not need to match a use-case folder perfectly. The agent first lists available use cases, then asks the model to return the closest exact name.
+
+\begin{lstlisting}[style=pythonstyle]
+async def fetch_use_cases() -> list[str]:
+    return sorted(p.name for p in USE_CASES_DIR.iterdir() if p.is_dir())
+\end{lstlisting}
+
+\begin{lstlisting}[style=pythonstyle]
+async def resolve_use_case(use_case_input: str, llm: ChatOllama) -> str:
+    use_cases = await fetch_use_cases()
+
+    response = llm.invoke([
+        SystemMessage(
+            content=(
+                "You are a use case resolver. "
+                "Given a user's input and a list of available use case names, "
+                "return ONLY the exact name of the best matching use case. "
+                "No explanation, no punctuation - just the exact name."
+            )
+        ),
+        HumanMessage(
+            content=(
+                f"User input: {use_case_input}\n\n"
+                f"Available use cases:\n{json.dumps(use_cases, indent=2)}\n\n"
+                "Return only the exact use case name."
+            )
+        ),
+    ])
+    return response.content.strip()
+\end{lstlisting}
+
+For example, a user might type \texttt{quarterly}. If the available folder is \texttt{quarterly-report}, the resolver should return \texttt{quarterly-report}.
+
+\subsection{Building prompts}
+
+The system prompt contains the stable instructions: task overview, current step instructions, and required output format.
+
+\begin{lstlisting}[style=pythonstyle]
+def build_system_prompt(agent_task_description: str, spec: str, output_format: str) -> str:
+    return (
+        "You are an AI assistant executing one step of a multi-step task.\n\n"
+        "## Task Overview\n"
+        f"{agent_task_description}\n\n"
+        "## Your Task\n"
+        f"{spec}\n\n"
+        "## Required Output Format\n"
+        f"{output_format}\n\n"
+        "Produce ONLY the output described in the required output format. "
+        "Do not include any preamble, commentary, or explanation outside "
+        "the specified format."
+    )
+\end{lstlisting}
+
+The user message contains the run-specific data and prior step outputs.
+
+\begin{lstlisting}[style=pythonstyle]
+def format_prior_outputs(previous_outputs: dict[str, str]) -> str:
+    if not previous_outputs:
+        return ""
+    sections = "\n\n---\n\n".join(
+        f"### {name}\n\n{content}"
+        for name, content in previous_outputs.items()
+    )
+    return f"Here are the outputs from all previous steps:\n\n{sections}\n\n"
+
+
+def build_user_content(input_data: str, previous_outputs: dict[str, str]) -> str:
+    prior_steps_text = format_prior_outputs(previous_outputs)
+    return (
+        "Here is the raw input data for this pipeline run:\n\n"
+        f"{input_data}\n\n"
+        f"{prior_steps_text}"
+        "Execute this step and produce the output in the specified format."
+    )
+\end{lstlisting}
+
+\begin{warnbox}
+The prompt grows as the pipeline runs because every later step receives all earlier outputs. This is why the model is configured with a larger context window.
+\end{warnbox}
+
+\subsection{Running one step}
+
+\begin{lstlisting}[style=pythonstyle]
+async def run_step(
+    use_case: str,
+    step_name: str,
+    agent_task_description: str,
+    input_data: str,
+    previous_outputs: dict[str, str],
+    context: dict,
+    context_path: Path,
+    llm: ChatOllama,
+) -> str:
+    spec = await fetch_asset(USE_CASES_DIR / use_case / step_name / "spec.md")
+    output_format = await fetch_asset(USE_CASES_DIR / use_case / step_name / "output.md")
+
+    system_prompt = build_system_prompt(agent_task_description, spec, output_format)
+    user_content = build_user_content(input_data, previous_outputs)
+
+    response = llm.invoke([
+        SystemMessage(content=system_prompt),
+        HumanMessage(content=user_content),
+    ])
+    step_output = response.content
+
+    context[step_name] = {
+        "output_type": "text",
+        "content": step_output,
+        "description": f"Output of {step_name}",
+    }
+    context_path.write_text(json.dumps(context, indent=2))
+
+    return step_output
+\end{lstlisting}
+
+The important behavior is the write to \texttt{context.json}. After each step, the output is saved immediately. If a later step fails, you can still inspect the work completed so far.
+
+\subsection{Running the pipeline}
+
+\begin{lstlisting}[style=pythonstyle]
+async def run_pipeline(use_case_input: str) -> str:
+    llm = ChatOllama(model="gemma4:e4b", num_ctx=32768, temperature=0)
+    use_case = await resolve_use_case(use_case_input, llm)
+
+    agent_task_description = await fetch_asset(USE_CASES_DIR / use_case / "agent_task_description.md")
+    input_data = await fetch_asset(USE_CASES_DIR / use_case / "input_data.md")
+    steps = await fetch_steps(use_case)
+
+    context: dict = {}
+    context_path = USE_CASES_DIR / use_case / "context.json"
+    previous_outputs: dict[str, str] = {}
+
+    for step_name in steps:
+        step_output = await run_step(
+            use_case, step_name,
+            agent_task_description, input_data,
+            previous_outputs, context, context_path, llm,
+        )
+        previous_outputs[step_name] = step_output
+
+    final_output = previous_outputs[steps[-1]]
+    report_path = USE_CASES_DIR / use_case / "final_report.md"
+    report_path.write_text(final_output)
+    return final_output
+\end{lstlisting}
+
+The model settings are conservative:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \texttt{model="gemma4:e4b"} selects the local Ollama model.
+  \item \texttt{num\_ctx=32768} gives the pipeline room for input data and prior outputs.
+  \item \texttt{temperature=0} makes the output more repeatable.
+\end{itemize}
+
+\clearpage
+
+\section{Setup Instructions}
+
+\subsection{1. Install dependencies}
+
+Create a virtual environment and install the packages used by Week 1:
+
+\begin{lstlisting}[style=shellstyle]
+python3 -m venv venv
+source venv/bin/activate
+pip install langchain-ollama
+\end{lstlisting}
+
+If you are using the repository's full \texttt{requirements.txt}, this dependency is already included.
+
+\subsection{2. Start Ollama}
+
+Install Ollama from \url{https://ollama.com/download}, then make sure the Ollama server is running:
+
+\begin{lstlisting}[style=shellstyle]
+ollama serve
+\end{lstlisting}
+
+In another terminal, pull the model used by the script:
+
+\begin{lstlisting}[style=shellstyle]
+ollama pull gemma4:e4b
+\end{lstlisting}
+
+\subsection{3. Run the agent}
+
+From the repository root:
+
+\begin{lstlisting}[style=shellstyle]
+python week-1/agent.py "quarterly report"
+\end{lstlisting}
+
+The resolver maps \texttt{"quarterly report"} to the matching use-case folder, such as \texttt{quarterly-report}. The agent prints the resolved use case and each step as it runs. When it finishes, inspect:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \texttt{use-cases/quarterly-report/context.json}
+  \item \texttt{use-cases/quarterly-report/final\_report.md}
+\end{itemize}
+
+\clearpage
+
+\section{Example: Quarterly Report Use Case}
+
+The included \texttt{use-cases/quarterly-report/} folder is the reference example for Week 1. It contains four steps:
+
+\begin{lstlisting}[style=plainstyle]
+quarterly-report/
+|-- agent_task_description.md
+|-- input_data.md
+|-- context.json                      (written at runtime)
+|-- final_report.md                   (written at runtime)
+|-- step_01_data_structuring/
+|   |-- spec.md
+|   +-- output.md
+|-- step_02_analysis/
+|   |-- spec.md
+|   +-- output.md
+|-- step_03_narrative/
+|   |-- spec.md
+|   +-- output.md
++-- step_04_report_assembly/
+    |-- spec.md
+    +-- output.md
+\end{lstlisting}
+
+\subsection{Step 1 -- Data structuring}
+
+The first step turns the raw input tables into a consistent structure. It preserves the provided values, organises them into named sections, and validates that revenue totals by product line and by region match.
+
+\subsection{Step 2 -- Analysis}
+
+The second step computes year-on-year changes, revenue, expenses, operating profit, operating margin, customer growth, churn, and flagged movements. It does not invent causes; it records what the data shows.
+
+\subsection{Step 3 -- Narrative}
+
+The third step turns the analysis into a professional executive summary. It uses the company name and quarter from the input data and avoids figures that were not present in the analysis output.
+
+\subsection{Step 4 -- Report assembly}
+
+The final step assembles the previous outputs into one markdown report. This is an assembly step only: it should not add, remove, or alter facts from earlier steps.
+
+\begin{notebox}
+This example is intentionally plain. The important pattern is not the quarterly-report domain; it is the folder contract. Any repeatable workflow can use the same structure if each step has a clear spec and output format.
+\end{notebox}
+
+\end{document}

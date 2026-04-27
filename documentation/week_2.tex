@@ -1,0 +1,511 @@
+\documentclass[12pt, a4paper]{article}
+
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{mdframed}
+\usepackage{parskip}
+\usepackage{microtype}
+
+\definecolor{primary}{HTML}{1D9E75}
+\definecolor{secondary}{HTML}{534AB7}
+\definecolor{codebg}{HTML}{F5F5F0}
+\definecolor{codeborder}{HTML}{D3D1C7}
+\definecolor{notebg}{HTML}{E1F5EE}
+\definecolor{noteborder}{HTML}{0F6E56}
+\definecolor{warnbg}{HTML}{FAEEDA}
+\definecolor{warnborder}{HTML}{854F0B}
+\definecolor{darktext}{HTML}{2C2C2A}
+\definecolor{mutedtext}{HTML}{5F5E5A}
+\definecolor{pykeyword}{HTML}{0F6E56}
+\definecolor{pystring}{HTML}{BA7517}
+\definecolor{pycomment}{HTML}{7F7D75}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=secondary,
+  urlcolor=primary,
+  citecolor=primary,
+  pdftitle={Week 2 Report Agent Guide},
+  pdfauthor={}
+}
+
+\titleformat{\section}{\Large\bfseries\color{darktext}}{}{0em}{}[\color{primary}\titlerule]
+\titleformat{\subsection}{\large\bfseries\color{darktext}}{}{0em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{mutedtext}}{}{0em}{}
+\titlespacing{\section}{0pt}{2em}{0.8em}
+\titlespacing{\subsection}{0pt}{1.4em}{0.4em}
+\titlespacing{\subsubsection}{0pt}{1em}{0.3em}
+
+\lstdefinestyle{plainstyle}{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small\color{darktext},
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{codeborder},
+  framesep=8pt,
+  showstringspaces=false,
+  tabsize=2
+}
+
+\lstdefinestyle{pythonstyle}{
+  language=Python,
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small\color{darktext},
+  keywordstyle=\color{pykeyword}\bfseries,
+  stringstyle=\color{pystring},
+  commentstyle=\color{pycomment}\itshape,
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{codeborder},
+  framesep=8pt,
+  showstringspaces=false,
+  tabsize=4,
+  numbers=left,
+  numbersep=8pt
+}
+
+\lstdefinestyle{shellstyle}{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small\color{darktext},
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{codeborder},
+  framesep=8pt,
+  showstringspaces=false,
+  tabsize=2,
+  morekeywords={python,pip,source}
+}
+
+\newmdenv[
+  backgroundcolor=notebg,
+  linecolor=noteborder,
+  linewidth=3pt,
+  topline=false,
+  bottomline=false,
+  rightline=false,
+  innerleftmargin=12pt,
+  innerrightmargin=12pt,
+  innertopmargin=8pt,
+  innerbottommargin=8pt
+]{notebox}
+
+\newmdenv[
+  backgroundcolor=warnbg,
+  linecolor=warnborder,
+  linewidth=3pt,
+  topline=false,
+  bottomline=false,
+  rightline=false,
+  innerleftmargin=12pt,
+  innerrightmargin=12pt,
+  innertopmargin=8pt,
+  innerbottommargin=8pt
+]{warnbox}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{mutedtext}Week 2 Report Agent}
+\fancyfoot[C]{\small\color{mutedtext}\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{codeborder}\leaders\hrule height \headrulewidth\hfill}}
+
+\begin{document}
+
+\begin{titlepage}
+  \centering
+  \vspace*{3cm}
+  {\color{primary}\rule{\linewidth}{2pt}}
+  \vspace{1cm}
+
+  {\Huge\bfseries\color{darktext} Week 2: MCP-Enabled Report Agent}\\[0.5em]
+  {\Large\color{mutedtext} Incremental guide from local files to MCP resources}
+
+  \vspace{1cm}
+  {\color{primary}\rule{\linewidth}{2pt}}
+
+  \vspace{2cm}
+  {\large\color{mutedtext}
+    Extra concepts needed for \texttt{week-2/agent.py}\\
+    and \texttt{week-2/mcp\_server.py}.
+  }
+
+  \vfill
+  {\small\color{mutedtext} Version 1.0}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+\section{How to Read This Document}
+
+This document assumes you have already read Week 1. It does not repeat the introductory quarterly-report example, the use-case folder contract, or the full local pipeline walkthrough. Those are the foundation.
+
+Week 2 is an incremental addendum. Read it as the answer to one question: \textit{what changes when the same use-case assets can be read through MCP resources instead of only through local file paths?}
+
+\section{What Changes in Week 2}
+
+Week 2 keeps the Week 1 pipeline model. The agent still resolves a use case, loads the task description and input data, discovers ordered steps, calls the model for each step, writes \texttt{context.json}, and saves the final output.
+
+The new idea is that the agent can read use-case assets through two channels:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{\texttt{local}} -- read files directly from \texttt{use-cases/}, as in Week 1.
+  \item \textbf{\texttt{mcp}} -- read the same assets through MCP resource URIs served by \texttt{week-2/mcp\_server.py}.
+\end{itemize}
+
+\begin{notebox}
+\textbf{Week 2 is an extension, not a rewrite.} The prompt construction, step execution, context writing, and final report writing are the same idea as Week 1. The main change is how the agent fetches the files it needs.
+\end{notebox}
+
+\section{New Dependencies}
+
+Week 1 needs LangChain and Ollama. Week 2 adds FastMCP:
+
+\begin{lstlisting}[style=shellstyle]
+pip install langchain-ollama fastmcp
+\end{lstlisting}
+
+If you use the repository's \texttt{requirements.txt}, \texttt{fastmcp} is already included.
+
+FastMCP is used in two places:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \texttt{FastMCP} defines the MCP server and its resources in \texttt{mcp\_server.py}.
+  \item \texttt{Client} lets \texttt{agent.py} read those resources when \texttt{AGENT\_TYPE = "mcp"}.
+\end{itemize}
+
+\section{MCP in This Project}
+
+MCP stands for Model Context Protocol. In this project, you can think of it as a standard way to expose project assets to an agent. The MCP server presents files from \texttt{use-cases/} as named resources such as:
+
+\begin{lstlisting}[style=plainstyle]
+use-cases://
+use-cases://quarterly-report/task
+use-cases://quarterly-report/input
+use-cases://quarterly-report/steps
+use-cases://quarterly-report/step_01_data_structuring/spec
+use-cases://quarterly-report/step_01_data_structuring/output
+\end{lstlisting}
+
+The Week 2 agent can ask the MCP client to read one of these resource URIs. The server maps the URI back to the appropriate file under \texttt{use-cases/}.
+
+\begin{warnbox}
+In this repository, MCP mode changes the read path only. Step outputs are still written locally to \texttt{context.json} and \texttt{final\_report.md} under the resolved use-case folder.
+\end{warnbox}
+
+\section{The MCP Server}
+
+The MCP server is \texttt{week-2/mcp\_server.py}. It imports FastMCP, points at the same \texttt{use-cases/} directory, and registers resources.
+
+\subsection{Server setup}
+
+\begin{lstlisting}[style=pythonstyle]
+import json
+from pathlib import Path
+from fastmcp import FastMCP
+
+USE_CASES_DIR = Path(__file__).parent.parent / "use-cases"
+
+mcp = FastMCP("report-agent")
+\end{lstlisting}
+
+\texttt{mcp = FastMCP("report-agent")} creates a named MCP server object. The resource decorators later in the file attach functions to this server.
+
+\subsection{Path helpers}
+
+\begin{lstlisting}[style=pythonstyle]
+def _use_case_path(name: str) -> Path:
+    path = USE_CASES_DIR / name
+    if not path.exists():
+        raise FileNotFoundError(f"Use case '{name}' not found")
+    return path
+
+
+def _step_path(name: str, step: str) -> Path:
+    path = _use_case_path(name) / step
+    if not path.exists():
+        raise FileNotFoundError(f"Step '{step}' not found in use case '{name}'")
+    return path
+\end{lstlisting}
+
+These helpers keep validation in one place. Resource functions call them before reading files.
+
+\subsection{Listing use cases}
+
+\begin{lstlisting}[style=pythonstyle]
+@mcp.resource("use-cases://")
+def list_use_cases() -> str:
+    """List all available use case names."""
+    names = sorted(p.name for p in USE_CASES_DIR.iterdir() if p.is_dir())
+    return json.dumps(names, indent=2)
+\end{lstlisting}
+
+The root resource returns a JSON list of available use-case folders. The agent uses this during use-case resolution.
+
+\subsection{Listing steps}
+
+\begin{lstlisting}[style=pythonstyle]
+@mcp.resource("use-cases://{name}/steps")
+def list_steps(name: str) -> str:
+    """List all step folder names for a given use case."""
+    base = _use_case_path(name)
+    steps = sorted(
+        (p.name for p in base.iterdir() if p.is_dir() and p.name.startswith("step_")),
+        key=lambda name: int(name.split("_")[1]),
+    )
+    return json.dumps(steps, indent=2)
+\end{lstlisting}
+
+This is the MCP version of Week 1's \texttt{fetch\_steps}. It returns JSON text because MCP resources return content, not Python objects. The agent parses the JSON after reading it.
+
+\subsection{Reading task and input files}
+
+\begin{lstlisting}[style=pythonstyle]
+@mcp.resource("use-cases://{name}/task")
+def get_task(name: str) -> str:
+    """Return the agent task description for a use case."""
+    return (_use_case_path(name) / "agent_task_description.md").read_text()
+
+
+@mcp.resource("use-cases://{name}/input")
+def get_input(name: str) -> str:
+    """Return the input data for a use case."""
+    return (_use_case_path(name) / "input_data.md").read_text()
+\end{lstlisting}
+
+These resources expose the two top-level files needed by every run.
+
+\subsection{Reading step files}
+
+\begin{lstlisting}[style=pythonstyle]
+@mcp.resource("use-cases://{name}/{step}/spec")
+def get_step_spec(name: str, step: str) -> str:
+    """Return the spec for a specific step in a use case."""
+    return (_step_path(name, step) / "spec.md").read_text()
+
+
+@mcp.resource("use-cases://{name}/{step}/output")
+def get_step_output(name: str, step: str) -> str:
+    """Return the output format definition for a specific step in a use case."""
+    return (_step_path(name, step) / "output.md").read_text()
+\end{lstlisting}
+
+These are the resources the agent reads before running each step.
+
+\subsection{Optional prompt resource}
+
+\begin{lstlisting}[style=pythonstyle]
+@mcp.resource("use-cases://{name}/{step}/prompt")
+def get_step_prompt(name: str, step: str) -> str:
+    """Return the pre-rendered prompt for a step (available in Bedrock use cases)."""
+    prompt_file = _step_path(name, step) / "prompt.md"
+    if not prompt_file.exists():
+        raise FileNotFoundError(f"No prompt.md found for step '{step}' in use case '{name}'")
+    return prompt_file.read_text()
+\end{lstlisting}
+
+The current Week 2 agent does not use this resource during the local-or-MCP pipeline. It is present so use cases that contain pre-rendered \texttt{prompt.md} files can expose them through the same server.
+
+\section{The Week 2 Agent}
+
+\subsection{New imports and configuration}
+
+Week 2 adds the FastMCP client and imports the server object:
+
+\begin{lstlisting}[style=pythonstyle]
+sys.path.insert(0, str(Path(__file__).parent))
+
+from fastmcp import Client
+from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_ollama import ChatOllama
+
+from mcp_server import mcp
+
+AGENT_TYPE = "local"  # either "local" or "mcp"
+USE_CASES_DIR = Path(__file__).parent.parent / "use-cases"
+
+_mcp_client: Client | None = None
+\end{lstlisting}
+
+\texttt{AGENT\_TYPE} chooses the read channel. Keep it as \texttt{"local"} to behave like Week 1. Set it to \texttt{"mcp"} to read through the MCP server.
+
+\texttt{\_mcp\_client} stores the active client while an MCP run is in progress. This keeps the helper function signatures simple.
+
+\subsection{Channel-aware asset fetching}
+
+Week 1 had a local-only \texttt{fetch\_asset(path)}. Week 2 replaces it with a channel-aware version:
+
+\begin{lstlisting}[style=pythonstyle]
+async def fetch_asset(uri: str | Path, channel: str, type: str = "prompt") -> str:
+    if channel == "local":
+        path = Path(uri)
+        return path.read_text() if path.exists() else ""
+
+    if channel == "mcp":
+        if _mcp_client is None:
+            raise RuntimeError("MCP client is not initialized")
+        contents = await _mcp_client.read_resource(str(uri))
+        return contents[0].text
+
+    raise ValueError(f"Unsupported channel '{channel}'")
+\end{lstlisting}
+
+The caller passes either a local path or an MCP resource URI. The rest of the pipeline does not need to know where the text came from.
+
+\subsection{Channel-aware use-case and step discovery}
+
+\begin{lstlisting}[style=pythonstyle]
+async def fetch_use_cases(channel: str) -> list[str]:
+    if channel == "local":
+        return sorted(p.name for p in USE_CASES_DIR.iterdir() if p.is_dir())
+
+    if channel == "mcp":
+        return json.loads(await fetch_asset("use-cases://", channel))
+
+    raise ValueError(f"Unsupported channel '{channel}'")
+\end{lstlisting}
+
+\begin{lstlisting}[style=pythonstyle]
+async def fetch_steps(use_case: str, channel: str) -> list[str]:
+    if channel == "local":
+        use_case_dir = USE_CASES_DIR / use_case
+        return sorted(
+            (d.name for d in use_case_dir.iterdir() if d.is_dir() and d.name.startswith("step_")),
+            key=lambda name: int(name.split("_")[1]),
+        )
+
+    if channel == "mcp":
+        return json.loads(await fetch_asset(f"use-cases://{use_case}/steps", channel))
+
+    raise ValueError(f"Unsupported channel '{channel}'")
+\end{lstlisting}
+
+These functions return Python lists in both modes. In local mode they build the list directly from the file system. In MCP mode they read JSON text from a resource and parse it.
+
+\subsection{Mapping logical assets to locations}
+
+The Week 2 agent adds \texttt{asset\_uri}. It translates logical asset names into either local paths or MCP URIs.
+
+\begin{lstlisting}[style=pythonstyle]
+def asset_uri(use_case: str, channel: str, asset: str, step_name: str | None = None) -> str | Path:
+    if channel == "local":
+        if asset == "task":
+            return USE_CASES_DIR / use_case / "agent_task_description.md"
+        if asset == "input":
+            return USE_CASES_DIR / use_case / "input_data.md"
+        if step_name is not None:
+            return USE_CASES_DIR / use_case / step_name / f"{asset}.md"
+
+    if channel == "mcp":
+        if asset in {"task", "input"}:
+            return f"use-cases://{use_case}/{asset}"
+        if step_name is not None:
+            return f"use-cases://{use_case}/{step_name}/{asset}"
+
+    raise ValueError(f"Unsupported asset '{asset}' for channel '{channel}'")
+\end{lstlisting}
+
+This helper is the main design improvement over hard-coding paths everywhere. The pipeline can ask for \texttt{"task"}, \texttt{"input"}, \texttt{"spec"}, or \texttt{"output"} and let \texttt{asset\_uri} decide the concrete location.
+
+\subsection{Running a step is almost unchanged}
+
+The Week 2 \texttt{run\_step} receives one extra argument: \texttt{channel}. The only changed lines are the reads for \texttt{spec.md} and \texttt{output.md}.
+
+\begin{lstlisting}[style=pythonstyle]
+spec = await fetch_asset(asset_uri(use_case, channel, "spec", step_name), channel)
+output_format = await fetch_asset(asset_uri(use_case, channel, "output", step_name), channel)
+\end{lstlisting}
+
+After those files are loaded, the same prompt-building and model invocation logic from Week 1 is used.
+
+\section{MCP Client Lifecycle}
+
+The agent should only create an MCP client when it actually needs MCP mode. That is handled by \texttt{run\_pipeline\_with\_client}.
+
+\begin{lstlisting}[style=pythonstyle]
+async def run_pipeline_with_client(use_case_input: str) -> str:
+    global _mcp_client
+
+    if AGENT_TYPE == "local":
+        return await run_pipeline(use_case_input)
+
+    async with Client(mcp) as client:
+        _mcp_client = client
+        try:
+            return await run_pipeline(use_case_input)
+        finally:
+            _mcp_client = None
+\end{lstlisting}
+
+In local mode, no MCP client is created. In MCP mode, the client is opened once for the full pipeline run and then cleared in the \texttt{finally} block.
+
+\begin{notebox}
+\textbf{Why one client for the whole run?} The pipeline reads multiple resources: use cases, steps, task, input, specs, and output formats. Opening the client once keeps the lifetime clear and avoids repeated setup work.
+\end{notebox}
+
+\section{Running Week 2}
+
+\subsection{Local mode}
+
+With the default setting:
+
+\begin{lstlisting}[style=pythonstyle]
+AGENT_TYPE = "local"
+\end{lstlisting}
+
+run:
+
+\begin{lstlisting}[style=shellstyle]
+python week-2/agent.py "quarterly report"
+\end{lstlisting}
+
+The resolver maps \texttt{"quarterly report"} to the matching use-case folder, such as \texttt{quarterly-report}. This should behave like the Week 1 agent, while using the Week 2 code path.
+
+\subsection{MCP mode}
+
+Change the setting in \texttt{week-2/agent.py}:
+
+\begin{lstlisting}[style=pythonstyle]
+AGENT_TYPE = "mcp"
+\end{lstlisting}
+
+Then run the same command:
+
+\begin{lstlisting}[style=shellstyle]
+python week-2/agent.py "quarterly report"
+\end{lstlisting}
+
+The pipeline behavior should be the same from the user's point of view. Internally, the agent reads task assets through the MCP resources instead of direct file reads.
+
+
+\section{Week 1 vs Week 2 Summary}
+
+\begin{center}
+\begin{tabular}{p{0.28\linewidth}p{0.30\linewidth}p{0.30\linewidth}}
+\textbf{Topic} & \textbf{Week 1} & \textbf{Week 2} \\
+\hline
+Asset source & Local files only & Local files or MCP resources \\
+Main script & \texttt{week-1/agent.py} & \texttt{week-2/agent.py} \\
+Server file & None & \texttt{week-2/mcp\_server.py} \\
+Fetcher & \texttt{fetch\_asset(path)} & \texttt{fetch\_asset(uri, channel)} \\
+Mode switch & None & \texttt{AGENT\_TYPE} \\
+New dependency & None beyond Week 1 & \texttt{fastmcp} \\
+\end{tabular}
+\end{center}
+
+\section{Common Mistakes}
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{Forgetting to install FastMCP.} MCP mode needs \texttt{fastmcp}; Week 1 does not.
+  \item \textbf{Setting \texttt{AGENT\_TYPE} to an unsupported value.} It must be exactly \texttt{"local"} or \texttt{"mcp"}.
+  \item \textbf{Breaking resource URI names.} The client and server must agree on URI patterns such as \texttt{use-cases://\{name\}/input}.
+  \item \textbf{Assuming MCP mode writes remotely.} In this project, writes still go to the local use-case folder.
+  \item \textbf{Changing the use-case folder format.} Both channels still depend on \\ \texttt{agent\_task\_description.md}, \texttt{input\_data.md}, and numbered step folders.
+\end{itemize}
+
+\end{document}
