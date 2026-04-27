@@ -1,16 +1,17 @@
 """
-Modular Agentic Pipeline Runner — LangChain Implementation
+Modular Agentic Pipeline Runner — File System Implementation
 
-Reads a pipeline directory, discovers steps in order, and executes each
-one by calling an LLM with the step's spec, output format, and the
-previous step's output. All outputs are recorded in context.json.
+Reads the use-cases directory to discover use cases and pipeline steps, then
+executes each step by calling an LLM with the step's spec, output format, and
+all previous steps' outputs. All step outputs are recorded in context.json.
 
 Usage:
-    python agent.py <pipeline_directory>
+    python agent.py <use_case_name>
 
 Requires Ollama running locally with the target model pulled.
 """
 
+import asyncio
 import json
 import sys
 from pathlib import Path
@@ -18,19 +19,25 @@ from pathlib import Path
 from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage, SystemMessage
 
+USE_CASES_DIR = Path(__file__).parent.parent / "use-cases"
 
-def discover_steps(pipeline_dir: Path) -> list[Path]:
-    """Find all step_* directories, sorted by name."""
+
+# ── data-access helpers (file system) ────────────────────────────────────────
+
+async def fetch_resource(path: Path) -> str:
+    return path.read_text() if path.exists() else ""
+
+
+async def fetch_steps(use_case: str) -> list[str]:
+    use_case_dir = USE_CASES_DIR / use_case
     return sorted(
-        (d for d in pipeline_dir.iterdir() if d.is_dir() and d.name.startswith("step_")),
-        key=lambda d: int(d.name.split("_", 1)[1]),
+        (d.name for d in use_case_dir.iterdir() if d.is_dir() and d.name.startswith("step_")),
+        key=lambda name: int(name.split("_")[1]),
     )
 
 
-def read_file(path: Path) -> str:
-    """Read a file and return its contents, or empty string if missing."""
-    return path.read_text() if path.exists() else ""
 
+# ── pipeline helpers ──────────────────────────────────────────────────────────
 
 def build_system_prompt(agent_task_description: str, spec: str, output_format: str) -> str:
     return (
@@ -50,7 +57,6 @@ def build_system_prompt(agent_task_description: str, spec: str, output_format: s
 def format_prior_outputs(previous_outputs: dict[str, str]) -> str:
     if not previous_outputs:
         return ""
-        
     sections = "\n\n---\n\n".join(
         f"### {name}\n\n{content}"
         for name, content in previous_outputs.items()
@@ -68,18 +74,9 @@ def build_user_content(input_data: str, previous_outputs: dict[str, str]) -> str
     )
 
 
-def save_context(context_path: Path, context: dict) -> None:
-    context_path.write_text(json.dumps(context, indent=2))
-
-
-def save_final_report(root: Path, content: str) -> Path:
-    report_path = root / "final_report.md"
-    report_path.write_text(content)
-    return report_path
-
-
-def run_step(
-    step_dir: Path,
+async def run_step(
+    use_case: str,
+    step_name: str,
     agent_task_description: str,
     input_data: str,
     previous_outputs: dict[str, str],
@@ -87,12 +84,10 @@ def run_step(
     context_path: Path,
     llm: ChatOllama,
 ) -> str:
-    """Execute a single pipeline step, persist its output to context, and return the output."""
-    step_name = step_dir.name
     print(f"[{step_name}] running ...")
 
-    spec = read_file(step_dir / "spec.md")
-    output_format = read_file(step_dir / "output.md")
+    spec = await fetch_resource(USE_CASES_DIR / use_case / step_name / "spec.md")
+    output_format = await fetch_resource(USE_CASES_DIR / use_case / step_name / "output.md")
 
     system_prompt = build_system_prompt(agent_task_description, spec, output_format)
     user_content = build_user_content(input_data, previous_outputs)
@@ -108,41 +103,41 @@ def run_step(
         "content": step_output,
         "description": f"Output of {step_name}",
     }
-    save_context(context_path, context)
+    context_path.write_text(json.dumps(context, indent=2))
 
     print(f"[{step_name}] done ({len(step_output)} chars)\n")
     return step_output
 
 
-def run_pipeline(pipeline_dir: str) -> str:
-    """Execute the full pipeline and return the final step's output."""
-    root = Path(pipeline_dir).resolve()
+async def run_pipeline(use_case_input: str) -> str:
+    llm = ChatOllama(model="gemma4:e4b", num_ctx=32768, temperature=0)
 
-    agent_task_description = read_file(root / "agent_task_description.md")
-    input_data = read_file(root / "input_data.md")
+    agent_task_description = await fetch_resource(USE_CASES_DIR / use_case_input / "agent_task_description.md")
+    input_data = await fetch_resource(USE_CASES_DIR / use_case_input / "input_data.md")
+    steps = await fetch_steps(use_case_input)
 
-    steps = discover_steps(root)
     if not steps:
-        print("No step directories found.")
+        print("No steps found.")
         return ""
 
-    print(f"Pipeline: {root.name}")
-    print(f"Steps:    {[s.name for s in steps]}\n")
+    print(f"Use case: {use_case_input}")
+    print(f"Steps:    {steps}\n")
 
     context: dict = {}
-    context_path = root / "context.json"
-    llm = ChatOllama(model="gemma4", num_ctx=32768, temperature=0)
-
+    context_path = USE_CASES_DIR / use_case_input / "context.json"
     previous_outputs: dict[str, str] = {}
 
-    for step_dir in steps:
-        step_output = run_step(
-            step_dir, agent_task_description, input_data, previous_outputs, context, context_path, llm
+    for step_name in steps:
+        step_output = await run_step(
+            use_case_input, step_name,
+            agent_task_description, input_data,
+            previous_outputs, context, context_path, llm,
         )
-        previous_outputs[step_dir.name] = step_output
+        previous_outputs[step_name] = step_output
 
-    final_output = previous_outputs[steps[-1].name]
-    report_path = save_final_report(root, final_output)
+    final_output = previous_outputs[steps[-1]]
+    report_path = USE_CASES_DIR / use_case_input / "final_report.md"
+    report_path.write_text(final_output)
 
     print(f"Pipeline complete. Results in context.json and {report_path}")
     return final_output
@@ -150,17 +145,10 @@ def run_pipeline(pipeline_dir: str) -> str:
 
 def main():
     if len(sys.argv) != 2:
-        print("Usage: python agent.py <pipeline_directory>")
+        print("Usage: python agent.py <use_case_name>")
         sys.exit(1)
 
-    pipeline_dir = sys.argv[1]
-    if not Path(pipeline_dir).is_dir():
-        print(f"Error: {pipeline_dir} is not a directory")
-        sys.exit(1)
-
-    final_output = run_pipeline(pipeline_dir)
-    if final_output:
-        print(f"Final report saved to final_report.md")
+    asyncio.run(run_pipeline(sys.argv[1]))
 
 
 if __name__ == "__main__":

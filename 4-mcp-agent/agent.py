@@ -3,7 +3,8 @@ Modular Agentic Pipeline Runner — MCP Implementation
 
 Connects to the report-agent MCP server to discover use cases and execute
 pipeline steps. Accepts a (potentially misspelled) use case name and uses
-an LLM to resolve it before running.
+an LLM to resolve it before running. All step outputs are recorded in
+context.json.
 
 Usage:
     python agent.py <use_case_name>
@@ -27,11 +28,23 @@ from mcp_server import mcp
 USE_CASES_DIR = Path(__file__).parent.parent / "use-cases"
 
 
-async def resolve_use_case(client: Client, user_input: str, llm: ChatOllama) -> str:
-    """Step 0: list all use cases and ask the LLM to pick the best match."""
-    contents = await client.read_resource("use-cases://")
-    use_cases: list[str] = json.loads(contents[0].text)
+# ── data-access helpers (MCP) ─────────────────────────────────────────────────
 
+async def fetch_resource(client: Client, uri: str) -> str:
+    contents = await client.read_resource(uri)
+    return contents[0].text
+
+
+async def fetch_steps(client: Client, use_case: str) -> list[str]:
+    return json.loads(await fetch_resource(client, f"use-cases://{use_case}/steps"))
+
+
+
+# ── pipeline helpers ──────────────────────────────────────────────────────────
+
+async def resolve_use_case(client: Client, use_case_input: str, llm: ChatOllama) -> str:
+    """Step 0: list all use cases and ask the LLM to pick the best match."""
+    use_cases = json.loads(await fetch_resource(client, "use-cases://"))
     print(f"[step_0] available use cases: {use_cases}")
 
     response = llm.invoke([
@@ -45,14 +58,14 @@ async def resolve_use_case(client: Client, user_input: str, llm: ChatOllama) -> 
         ),
         HumanMessage(
             content=(
-                f"User input: {user_input}\n\n"
+                f"User input: {use_case_input}\n\n"
                 f"Available use cases:\n{json.dumps(use_cases, indent=2)}\n\n"
                 "Return only the exact use case name."
             )
         ),
     ])
     resolved = response.content.strip()
-    print(f"[step_0] resolved '{user_input}' → '{resolved}'\n")
+    print(f"[step_0] resolved '{use_case_input}' → '{resolved}'\n")
     return resolved
 
 
@@ -104,10 +117,8 @@ async def run_step(
 ) -> str:
     print(f"[{step_name}] running ...")
 
-    spec_contents = await client.read_resource(f"use-cases://{use_case}/{step_name}/spec")
-    output_contents = await client.read_resource(f"use-cases://{use_case}/{step_name}/output")
-    spec = spec_contents[0].text
-    output_format = output_contents[0].text
+    spec = await fetch_resource(client, f"use-cases://{use_case}/{step_name}/spec")
+    output_format = await fetch_resource(client, f"use-cases://{use_case}/{step_name}/output")
 
     system_prompt = build_system_prompt(agent_task_description, spec, output_format)
     user_content = build_user_content(input_data, previous_outputs)
@@ -135,14 +146,9 @@ async def run_pipeline(use_case_input: str) -> str:
     async with Client(mcp) as client:
         use_case = await resolve_use_case(client, use_case_input, llm)
 
-        task_contents = await client.read_resource(f"use-cases://{use_case}/task")
-        agent_task_description = task_contents[0].text
-
-        input_contents = await client.read_resource(f"use-cases://{use_case}/input")
-        input_data = input_contents[0].text
-
-        steps_contents = await client.read_resource(f"use-cases://{use_case}/steps")
-        steps: list[str] = json.loads(steps_contents[0].text)
+        agent_task_description = await fetch_resource(client, f"use-cases://{use_case}/task")
+        input_data = await fetch_resource(client, f"use-cases://{use_case}/input")
+        steps = await fetch_steps(client, use_case)
 
         if not steps:
             print("No steps found.")
