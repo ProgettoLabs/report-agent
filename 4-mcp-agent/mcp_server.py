@@ -1,8 +1,12 @@
 import json
+import smtplib
+import yaml
+from email.message import EmailMessage
 from pathlib import Path
 from fastmcp import FastMCP
 
 USE_CASES_DIR = Path(__file__).parent.parent / "use-cases"
+CREDENTIALS_PATH = Path(__file__).parent / ".credentials" / "mail_credentials.yaml"
 
 mcp = FastMCP("report-agent")
 
@@ -76,6 +80,32 @@ def get_step_prompt(name: str, step: str) -> str:
     if not prompt_file.exists():
         raise FileNotFoundError(f"No prompt.md found for step '{step}' in use case '{name}'")
     return prompt_file.read_text()
+
+
+def _load_email_credentials() -> dict:
+    with open(CREDENTIALS_PATH) as f:
+        return yaml.safe_load(f)
+
+
+@mcp.tool()
+def send_email(subject: str, body: str) -> str:
+    """Send an email to the default recipient with the given subject and body."""
+    creds = _load_email_credentials()
+
+    msg = EmailMessage()
+    msg.set_content(body)
+    msg["Subject"] = subject
+    msg["From"] = creds["email_user"]
+    msg["To"] = creds["recipient_email"]
+
+    try:
+        with smtplib.SMTP(creds["smtp_host"], 587) as server:
+            server.starttls()
+            server.login(creds["email_user"], creds["email_password"])
+            server.send_message(msg)
+        return f"Successfully sent email to {creds['recipient_email']}"
+    except Exception as e:
+        return f"Failed to send email: {str(e)}"
 
 
 if __name__ == "__main__":

@@ -146,6 +146,9 @@ ENV/
 env.bak/
 venv.bak/
 
+# Local credentials
+.credentials/
+
 # Spyder project settings
 .spyderproject
 .spyproject

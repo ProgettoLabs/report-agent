@@ -30,13 +30,13 @@ USE_CASES_DIR = Path(__file__).parent.parent / "use-cases"
 
 # ── data-access helpers (MCP) ─────────────────────────────────────────────────
 
-async def fetch_resource(client: Client, uri: str) -> str:
+async def fetch_asset(client: Client, uri: str) -> str:
     contents = await client.read_resource(uri)
     return contents[0].text
 
 
 async def fetch_steps(client: Client, use_case: str) -> list[str]:
-    return json.loads(await fetch_resource(client, f"use-cases://{use_case}/steps"))
+    return json.loads(await fetch_asset(client, f"use-cases://{use_case}/steps"))
 
 
 
@@ -44,7 +44,7 @@ async def fetch_steps(client: Client, use_case: str) -> list[str]:
 
 async def resolve_use_case(client: Client, use_case_input: str, llm: ChatOllama) -> str:
     """Step 0: list all use cases and ask the LLM to pick the best match."""
-    use_cases = json.loads(await fetch_resource(client, "use-cases://"))
+    use_cases = json.loads(await fetch_asset(client, "use-cases://"))
     print(f"[step_0] available use cases: {use_cases}")
 
     response = llm.invoke([
@@ -117,8 +117,8 @@ async def run_step(
 ) -> str:
     print(f"[{step_name}] running ...")
 
-    spec = await fetch_resource(client, f"use-cases://{use_case}/{step_name}/spec")
-    output_format = await fetch_resource(client, f"use-cases://{use_case}/{step_name}/output")
+    spec = await fetch_asset(client, f"use-cases://{use_case}/{step_name}/spec")
+    output_format = await fetch_asset(client, f"use-cases://{use_case}/{step_name}/output")
 
     system_prompt = build_system_prompt(agent_task_description, spec, output_format)
     user_content = build_user_content(input_data, previous_outputs)
@@ -146,8 +146,8 @@ async def run_pipeline(use_case_input: str) -> str:
     async with Client(mcp) as client:
         use_case = await resolve_use_case(client, use_case_input, llm)
 
-        agent_task_description = await fetch_resource(client, f"use-cases://{use_case}/task")
-        input_data = await fetch_resource(client, f"use-cases://{use_case}/input")
+        agent_task_description = await fetch_asset(client, f"use-cases://{use_case}/task")
+        input_data = await fetch_asset(client, f"use-cases://{use_case}/input")
         steps = await fetch_steps(client, use_case)
 
         if not steps:
@@ -174,6 +174,15 @@ async def run_pipeline(use_case_input: str) -> str:
         report_path.write_text(final_output)
 
         print(f"Pipeline complete. Results in context.json and {report_path}")
+
+        answer = input("\nWould you like to send the report via email? [y/N] ").strip().lower()
+        if answer in ("y", "yes"):
+            result = await client.call_tool(
+                "send_email",
+                {"subject": f"Report: {use_case}", "body": final_output},
+            )
+            print(result.content[0].text)
+
         return final_output
 
 
