@@ -164,13 +164,13 @@ The new idea is that the agent can read use-case assets through two channels:
 
 \section{New Dependencies}
 
-Week 1 needs LangChain and Ollama. Week 2 adds FastMCP:
+Week 1 needs LangChain model integrations for Ollama and OpenAI. Week 2 adds FastMCP:
 
 \begin{lstlisting}[style=shellstyle]
-pip install langchain-ollama fastmcp
+pip install langchain-ollama langchain-openai fastmcp
 \end{lstlisting}
 
-If you use the repository's \texttt{requirements.txt}, \texttt{fastmcp} is already included.
+If you use the repository's \texttt{requirements.txt}, these dependencies are already included.
 
 FastMCP is used in two places:
 
@@ -321,10 +321,15 @@ Week 2 adds the FastMCP client and imports the server object:
 sys.path.insert(0, str(Path(__file__).parent))
 
 from fastmcp import Client
+from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 
 from mcp_server import mcp
+
+MODEL_TYPE = "ollama"  # either "ollama" or "openai"
+OPENAI_API_KEY = ""
 
 AGENT_TYPE = "local"  # either "local" or "mcp"
 USE_CASES_DIR = Path(__file__).parent.parent / "use-cases"
@@ -332,9 +337,30 @@ USE_CASES_DIR = Path(__file__).parent.parent / "use-cases"
 _mcp_client: Client | None = None
 \end{lstlisting}
 
+\texttt{MODEL\_TYPE} chooses the model provider. Keep it as \texttt{"ollama"} for the local Ollama model, or set it to \texttt{"openai"} and fill in \texttt{OPENAI\_API\_KEY}.
+
 \texttt{AGENT\_TYPE} chooses the read channel. Keep it as \texttt{"local"} to behave like Week 1. Set it to \texttt{"mcp"} to read through the MCP server.
 
 \texttt{\_mcp\_client} stores the active client while an MCP run is in progress. This keeps the helper function signatures simple.
+
+\subsection{Model initialization}
+
+Week 2 uses the same model initialization helper as Week 1:
+
+\begin{lstlisting}[style=pythonstyle]
+def initialize_model() -> BaseChatModel:
+    if MODEL_TYPE == "ollama":
+        return ChatOllama(model="gemma4:e4b", num_ctx=32768, temperature=0)
+
+    if MODEL_TYPE == "openai":
+        if not OPENAI_API_KEY:
+            raise ValueError("OPENAI_API_KEY must be set when MODEL_TYPE is 'openai'")
+        return ChatOpenAI(model="gpt-5.4-mini", api_key=OPENAI_API_KEY, temperature=0)
+
+    raise ValueError("MODEL_TYPE must be either 'ollama' or 'openai'")
+\end{lstlisting}
+
+The model choice is independent from the asset channel. For example, \texttt{MODEL\_TYPE = "openai"} can run with either \texttt{AGENT\_TYPE = "local"} or \texttt{AGENT\_TYPE = "mcp"}.
 
 \subsection{Channel-aware asset fetching}
 
@@ -490,11 +516,12 @@ The pipeline behavior should be the same from the user's point of view. Internal
 \textbf{Topic} & \textbf{Week 1} & \textbf{Week 2} \\
 \hline
 Asset source & Local files only & Local files or MCP resources \\
+Model provider & Ollama or OpenAI & Ollama or OpenAI \\
 Main script & \texttt{week-1/agent.py} & \texttt{week-2/agent.py} \\
 Server file & None & \texttt{week-2/mcp\_server.py} \\
 Fetcher & \texttt{fetch\_asset(path)} & \texttt{fetch\_asset(uri, channel)} \\
-Mode switch & None & \texttt{AGENT\_TYPE} \\
-New dependency & None beyond Week 1 & \texttt{fastmcp} \\
+Mode switch & \texttt{MODEL\_TYPE} & \texttt{MODEL\_TYPE} and \texttt{AGENT\_TYPE} \\
+New dependency & \texttt{langchain-openai} for OpenAI mode & \texttt{fastmcp} \\
 \end{tabular}
 \end{center}
 
@@ -503,6 +530,7 @@ New dependency & None beyond Week 1 & \texttt{fastmcp} \\
 \begin{itemize}[leftmargin=1.5em]
   \item \textbf{Forgetting to install FastMCP.} MCP mode needs \texttt{fastmcp}; Week 1 does not.
   \item \textbf{Setting \texttt{AGENT\_TYPE} to an unsupported value.} It must be exactly \texttt{"local"} or \texttt{"mcp"}.
+  \item \textbf{Confusing \texttt{MODEL\_TYPE} and \texttt{AGENT\_TYPE}.} \texttt{MODEL\_TYPE} chooses \texttt{"ollama"} or \texttt{"openai"}; \texttt{AGENT\_TYPE} chooses \texttt{"local"} or \texttt{"mcp"}.
   \item \textbf{Breaking resource URI names.} The client and server must agree on URI patterns such as \texttt{use-cases://\{name\}/input}.
   \item \textbf{Assuming MCP mode writes remotely.} In this project, writes still go to the local use-case folder.
   \item \textbf{Changing the use-case folder format.} Both channels still depend on \\ \texttt{agent\_task\_description.md}, \texttt{input\_data.md}, and numbered step folders.

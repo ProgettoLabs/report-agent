@@ -9,7 +9,8 @@ step outputs are recorded in context.json.
 Usage:
     python agent.py <use_case_name>
 
-Requires Ollama running locally with the target model pulled.
+Requires Ollama running locally with the target model pulled when using the
+Ollama model type.
 """
 
 import asyncio
@@ -17,10 +18,29 @@ import json
 import sys
 from pathlib import Path
 
-from langchain_ollama import ChatOllama
+from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
+
+MODEL_TYPE = "ollama"  # either "ollama" or "openai"
+OPENAI_API_KEY = ""
 
 USE_CASES_DIR = Path(__file__).parent.parent / "use-cases"
+
+
+# ── model helpers ─────────────────────────────────────────────────────────────
+
+def initialize_model() -> BaseChatModel:
+    if MODEL_TYPE == "ollama":
+        return ChatOllama(model="gemma4:e4b", num_ctx=32768, temperature=0)
+
+    if MODEL_TYPE == "openai":
+        if not OPENAI_API_KEY:
+            raise ValueError("OPENAI_API_KEY must be set when MODEL_TYPE is 'openai'")
+        return ChatOpenAI(model="gpt-5.4-mini", api_key=OPENAI_API_KEY, temperature=0)
+
+    raise ValueError("MODEL_TYPE must be either 'ollama' or 'openai'")
 
 
 # ── data-access helpers (file system) ────────────────────────────────────────
@@ -44,7 +64,7 @@ async def fetch_use_cases() -> list[str]:
     return sorted(p.name for p in USE_CASES_DIR.iterdir() if p.is_dir())
 
 
-async def resolve_use_case(use_case_input: str, llm: ChatOllama) -> str:
+async def resolve_use_case(use_case_input: str, llm: BaseChatModel) -> str:
     """Step 0: list all use cases and ask the LLM to pick the best match."""
     use_cases = await fetch_use_cases()
     print(f"[step_0] available use cases: {use_cases}")
@@ -114,7 +134,7 @@ async def run_step(
     previous_outputs: dict[str, str],
     context: dict,
     context_path: Path,
-    llm: ChatOllama,
+    llm: BaseChatModel,
 ) -> str:
     print(f"[{step_name}] running ...")
 
@@ -142,7 +162,7 @@ async def run_step(
 
 
 async def run_pipeline(use_case_input: str) -> str:
-    llm = ChatOllama(model="gemma4:e4b", num_ctx=32768, temperature=0)
+    llm = initialize_model()
     use_case = await resolve_use_case(use_case_input, llm)
 
     agent_task_description = await fetch_asset(USE_CASES_DIR / use_case / "agent_task_description.md")

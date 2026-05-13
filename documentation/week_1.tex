@@ -123,7 +123,7 @@
   \vspace{1cm}
 
   {\Huge\bfseries\color{darktext} Week 1: Local Report Agent}\\[0.5em]
-  {\Large\color{mutedtext} File-system pipeline runner with LangChain and Ollama}
+  {\Large\color{mutedtext} File-system pipeline runner with LangChain, Ollama, and OpenAI}
 
   \vspace{1cm}
   {\color{primary}\rule{\linewidth}{2pt}}
@@ -236,7 +236,7 @@ The Week 1 agent reads everything from the local file system:
   \item The available workflows live in \texttt{use-cases/}.
   \item Each workflow has an overview file, an input data file, and numbered step folders.
   \item Each step folder contains \texttt{spec.md} and \texttt{output.md}.
-  \item The agent calls a local Ollama model through LangChain for each step.
+  \item The agent calls the configured LangChain chat model for each step.
   \item The agent writes step results to \texttt{context.json} and saves the last result as \texttt{final\_report.md}.
 \end{itemize}
 
@@ -247,7 +247,7 @@ After the use case is resolved, the execution flow is:
   \item Read \texttt{input\_data.md} for the raw input of this run.
   \item Discover the ordered \texttt{step\_NN\_*} directories.
   \item For each step, read \texttt{spec.md} and \texttt{output.md}.
-  \item Build the LangChain messages, call the local Ollama model, and record the response.
+  \item Build the LangChain messages, call the configured chat model, and record the response.
   \item Write the step output to \texttt{context.json}.
   \item Move to the next step, passing all prior outputs as additional context.
 \end{enumerate}
@@ -392,8 +392,13 @@ import json
 import sys
 from pathlib import Path
 
-from langchain_ollama import ChatOllama
+from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
+
+MODEL_TYPE = "ollama"  # either "ollama" or "openai"
+OPENAI_API_KEY = ""
 
 USE_CASES_DIR = Path(__file__).parent.parent / "use-cases"
 \end{lstlisting}
@@ -404,9 +409,30 @@ The Week 1 script uses:
   \item \texttt{asyncio} so the top-level pipeline can be written as async functions.
   \item \texttt{json} to write \texttt{context.json}.
   \item \texttt{Path} to work with local files and directories.
+  \item \texttt{BaseChatModel} to type the shared chat model interface.
   \item \texttt{ChatOllama} to call a local model through LangChain.
+  \item \texttt{ChatOpenAI} to call OpenAI through LangChain.
   \item \texttt{SystemMessage} and \texttt{HumanMessage} to build chat-style prompts.
 \end{itemize}
+
+\texttt{MODEL\_TYPE} chooses the model provider. Keep it as \texttt{"ollama"} for the local Ollama model, or set it to \texttt{"openai"} and fill in \texttt{OPENAI\_API\_KEY}.
+
+\subsection{Initializing the model}
+
+\begin{lstlisting}[style=pythonstyle]
+def initialize_model() -> BaseChatModel:
+    if MODEL_TYPE == "ollama":
+        return ChatOllama(model="gemma4:e4b", num_ctx=32768, temperature=0)
+
+    if MODEL_TYPE == "openai":
+        if not OPENAI_API_KEY:
+            raise ValueError("OPENAI_API_KEY must be set when MODEL_TYPE is 'openai'")
+        return ChatOpenAI(model="gpt-5.4-mini", api_key=OPENAI_API_KEY, temperature=0)
+
+    raise ValueError("MODEL_TYPE must be either 'ollama' or 'openai'")
+\end{lstlisting}
+
+This helper keeps the rest of the pipeline independent of the model provider. Both branches return a LangChain chat model with the same \texttt{invoke(...)} interface.
 
 \subsection{Reading local assets}
 
@@ -440,7 +466,7 @@ async def fetch_use_cases() -> list[str]:
 \end{lstlisting}
 
 \begin{lstlisting}[style=pythonstyle]
-async def resolve_use_case(use_case_input: str, llm: ChatOllama) -> str:
+async def resolve_use_case(use_case_input: str, llm: BaseChatModel) -> str:
     use_cases = await fetch_use_cases()
 
     response = llm.invoke([
@@ -523,7 +549,7 @@ async def run_step(
     previous_outputs: dict[str, str],
     context: dict,
     context_path: Path,
-    llm: ChatOllama,
+    llm: BaseChatModel,
 ) -> str:
     spec = await fetch_asset(USE_CASES_DIR / use_case / step_name / "spec.md")
     output_format = await fetch_asset(USE_CASES_DIR / use_case / step_name / "output.md")
@@ -553,7 +579,7 @@ The important behavior is the write to \texttt{context.json}. After each step, t
 
 \begin{lstlisting}[style=pythonstyle]
 async def run_pipeline(use_case_input: str) -> str:
-    llm = ChatOllama(model="gemma4:e4b", num_ctx=32768, temperature=0)
+    llm = initialize_model()
     use_case = await resolve_use_case(use_case_input, llm)
 
     agent_task_description = await fetch_asset(USE_CASES_DIR / use_case / "agent_task_description.md")
@@ -578,13 +604,15 @@ async def run_pipeline(use_case_input: str) -> str:
     return final_output
 \end{lstlisting}
 
-The model settings are conservative:
+The default Ollama settings are conservative:
 
 \begin{itemize}[leftmargin=1.5em]
   \item \texttt{model="gemma4:e4b"} selects the local Ollama model.
   \item \texttt{num\_ctx=32768} gives the pipeline room for input data and prior outputs.
   \item \texttt{temperature=0} makes the output more repeatable.
 \end{itemize}
+
+When \texttt{MODEL\_TYPE = "openai"}, the script uses \texttt{gpt-5.4-mini} with the same deterministic temperature setting.
 
 \clearpage
 
@@ -597,12 +625,14 @@ Create a virtual environment and install the packages used by Week 1:
 \begin{lstlisting}[style=shellstyle]
 python3 -m venv venv
 source venv/bin/activate
-pip install langchain-ollama
+pip install langchain-ollama langchain-openai
 \end{lstlisting}
 
-If you are using the repository's full \texttt{requirements.txt}, this dependency is already included.
+If you are using the repository's full \texttt{requirements.txt}, these dependencies are already included.
 
-\subsection{2. Start Ollama}
+\subsection{2. Configure the model}
+
+By default, the script uses Ollama:
 
 Install Ollama from \url{https://ollama.com/download}, then make sure the Ollama server is running:
 
@@ -614,6 +644,13 @@ In another terminal, pull the model used by the script:
 
 \begin{lstlisting}[style=shellstyle]
 ollama pull gemma4:e4b
+\end{lstlisting}
+
+To use OpenAI instead, change the model configuration in \texttt{week-1/agent.py}:
+
+\begin{lstlisting}[style=pythonstyle]
+MODEL_TYPE = "openai"
+OPENAI_API_KEY = "your-api-key"
 \end{lstlisting}
 
 \subsection{3. Run the agent}
