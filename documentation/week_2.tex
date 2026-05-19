@@ -45,7 +45,9 @@
   backgroundcolor=\color{codebg},
   basicstyle=\ttfamily\small\color{darktext},
   breaklines=true,
+  columns=fullflexible,
   frame=single,
+  keepspaces=true,
   rulecolor=\color{codeborder},
   framesep=8pt,
   showstringspaces=false,
@@ -60,7 +62,9 @@
   stringstyle=\color{pystring},
   commentstyle=\color{pycomment}\itshape,
   breaklines=true,
+  columns=fullflexible,
   frame=single,
+  keepspaces=true,
   rulecolor=\color{codeborder},
   framesep=8pt,
   showstringspaces=false,
@@ -73,12 +77,14 @@
   backgroundcolor=\color{codebg},
   basicstyle=\ttfamily\small\color{darktext},
   breaklines=true,
+  columns=fullflexible,
   frame=single,
+  keepspaces=true,
   rulecolor=\color{codeborder},
   framesep=8pt,
   showstringspaces=false,
   tabsize=2,
-  morekeywords={python,pip,source}
+  morekeywords={python,pip,source,ollama,cd}
 }
 
 \newmdenv[
@@ -167,7 +173,7 @@ The new idea is that the agent can read use-case assets through two channels:
 Week 1 needs LangChain model integrations for Ollama and OpenAI, plus \texttt{python-dotenv} for the shared \texttt{.env} file. Week 2 adds FastMCP:
 
 \begin{lstlisting}[style=shellstyle]
-pip install langchain-ollama langchain-openai python-dotenv fastmcp
+pip install -r requirements.txt
 \end{lstlisting}
 
 If you use the repository's \texttt{requirements.txt}, these dependencies are already included.
@@ -320,7 +326,6 @@ Week 2 adds the FastMCP client and imports the server object:
 \begin{lstlisting}[style=pythonstyle]
 import sys
 from dotenv import load_dotenv, set_key
-
 sys.path.insert(0, str(Path(__file__).parent))
 
 from fastmcp import Client
@@ -359,7 +364,7 @@ def load_api_key(cli_key: str | None) -> str | None:
 
 def initialize_model(api_key: str | None) -> BaseChatModel:
     if api_key:
-        return ChatOpenAI(model="gpt-4o-mini", api_key=api_key, temperature=0)
+        return ChatOpenAI(model="gpt-5.4-mini", api_key=api_key, temperature=0)
     print("[model] No OpenAI API key found -- using Ollama")
     return ChatOllama(model="gemma4:e4b", num_ctx=32768, temperature=0)
 \end{lstlisting}
@@ -494,7 +499,14 @@ The repository includes a \texttt{.env} file at the root with a blank \texttt{OP
 
 \subsection{Local mode}
 
-Pass \texttt{--agent-type local} on the command line, or leave it unset if \texttt{AGENT\_TYPE = "local"} in the code. The agent reads files directly, like Week 1:
+With \texttt{AGENT\_TYPE = "local"} (the default in the code), the agent reads files directly, like Week 1:
+
+\begin{lstlisting}[style=shellstyle]
+python week-2/agent.py "quarterly report"
+python week-2/agent.py "quarterly report" --api-key your-key
+\end{lstlisting}
+
+You also have the option to pass the command line argument \texttt{--agent-type local} to set the agent as local:
 
 \begin{lstlisting}[style=shellstyle]
 python week-2/agent.py "quarterly report" --agent-type local

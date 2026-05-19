@@ -44,46 +44,49 @@ pdfauthor={}
 \titlespacing{\subsubsection}{0pt}{1em}{0.3em}
 
 \lstdefinestyle{plainstyle}{
-backgroundcolor=\color{codebg},
-basicstyle=\ttfamily\small\color{darktext},
-breaklines=true,
-frame=single,
-rulecolor=\color{codeborder},
-framesep=8pt,
-showstringspaces=false,
-tabsize=2
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small\color{darktext},
+  breaklines=true,
+  columns=fullflexible,
+  frame=single,
+  keepspaces=true,
+  rulecolor=\color{codeborder},
+  framesep=8pt,
+  showstringspaces=false,
+  tabsize=2
 }
 
 \lstdefinestyle{pythonstyle}{
-language=Python,
-backgroundcolor=\color{codebg},
-basicstyle=\ttfamily\small\color{darktext},
-keywordstyle=\color{pykeyword}\bfseries,
-stringstyle=\color{pystring},
-commentstyle=\color{pycomment}\itshape,
-breaklines=true,
-frame=single,
-rulecolor=\color{codeborder},
-framesep=8pt,
-showstringspaces=false,
-tabsize=4,
-numbers=left,
-numbersep=8pt
+  language=Python,
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small\color{darktext},
+  keywordstyle=\color{pykeyword}\bfseries,
+  stringstyle=\color{pystring},
+  commentstyle=\color{pycomment}\itshape,
+  breaklines=true,
+  columns=fullflexible,
+  frame=single,
+  keepspaces=true,
+  rulecolor=\color{codeborder},
+  framesep=8pt,
+  showstringspaces=false,
+  tabsize=4,
+  numbers=left,
+  numbersep=8pt
 }
 
 \lstdefinestyle{shellstyle}{
-backgroundcolor=\color{codebg},
-basicstyle=\ttfamily\small\color{darktext},
-breaklines=true,
-columns=fullflexible,
-frame=single,
-rulecolor=\color{codeborder},
-framesep=8pt,
-keepspaces=true,
-showstringspaces=false,
-tabsize=2,
-upquote=true,
-morekeywords={python,pip,source,ollama,curl,bash}
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small\color{darktext},
+  breaklines=true,
+  columns=fullflexible,
+  frame=single,
+  keepspaces=true,
+  rulecolor=\color{codeborder},
+  framesep=8pt,
+  showstringspaces=false,
+  tabsize=2,
+  morekeywords={python,pip,source,ollama,cd}
 }
 
 \newmdenv[
@@ -281,6 +284,14 @@ Create a new agent named \texttt{report-agent} by running:
 openclaw agents add report-agent
 \end{lstlisting}
 
+Let's breakdown this command and look at its different parts:
+\begin{enumerate}
+    \item \texttt{openclaw}: The parent command to start off with all OpenClaw related instructions
+    \item \texttt{agents}: The sub-command to work with agent related operations
+    \item \texttt{add}: The sub-sub-command that allows you to add a new agent. Other options include \texttt{remove}, \texttt{list} etc.
+    \item \texttt{report-agent}: A custom name parameter that we want to provide to our agent
+\end{enumerate}
+
 \begin{notebox}
 If you are ever unsure about an OpenClaw command, run \texttt{openclaw --help} for a full list of commands. For help on a specific subcommand, append \texttt{--help} to it -- for example, \texttt{openclaw agents --help} will show all options available under the \texttt{agents} command.
 \end{notebox}
@@ -294,19 +305,28 @@ The next prompt will ask you to choose a workspace directory for the agent. This
 \end{lstlisting}
 
 \begin{warnbox}
-OpenClaw will create the agent's instruction files inside this directory. If you ever decide to delete the agent, take a backup of your use-case folders first -- removing the agent will remove this entire directory.
+It is important to make sure that the path to the folder does not contain spaces in it. If they do, replace them with '-' or '\_' so that OpenClaw can process them correctly.\\
+Additionally, OpenClaw will create the agent's instruction files inside this directory. If you ever decide to delete the agent, take a backup of your use-case folders first -- removing the agent will remove this entire directory.
 \end{warnbox}
+
+\begin{notebox}
+One tip to quickly add the path in the agent add step is to first delete the existing path from the terminal, and simply drag and drop the folder from finder to the terminal.
+\end{notebox}
 
 \subsection{Remaining agent setup steps}
 
 \begin{enumerate}[leftmargin=1.5em]
 \item \textbf{Configure model/auth for this agent now?} Choose \textbf{No}. The agent will inherit the model you configured during the installation phase.
-\item \textbf{Configure chat channels now?} Choose \textbf{No}.
+\item \textbf{Configure chat channels now?} Choose \textbf{No}. 
 \end{enumerate}
+
+\begin{notebox}
+If you wish, you can choose the other options for the two questions above. Choosing yes for the first question allows you to configure models other than the default one you had selected in the main agent. The second option allows you to communicate with OpenClaw using other channels such as WhatsApp or Telegram aside from the default terminal channel.
+\end{notebox}
 
 \subsection{Hatching the report agent}
 
-The agent has been created. Now we need to initialise it. Run the following command in your terminal:
+The report agent has been created. When the agent is created, it comes with a default set of markdown (\texttt{.md}) files. You can check the contents of these files inside the workspace folder you just selected. The files contain specific instructions on what to do when the agent is first created. We call this one time process as initializing the agent. Thus, to initialize the agent, run the following command in your terminal:
 
 \begin{lstlisting}[style=shellstyle]
 openclaw tui --session agent:report-agent:main
@@ -320,7 +340,18 @@ Once the session is open, greet the agent to wake it up:
 Wake up, my friend!
 \end{lstlisting}
 
-While a simple ``Hi'' would work with more capable models, the message above is the standard OpenClaw greeting and is a safe choice across all model sizes. From here, follow the same persona setup process as you did with the main agent.
+While a simple ``Hi'' would work with more capable models, the message above is the standard OpenClaw greeting and is a safe choice across all model sizes. From here, follow the same persona setup process as you did with the main agent. If you do not wish to decide a persona for the agent again, you can use the prompts from below:
+
+\begin{enumerate}
+    \item Answer to the first question when the agent asks who everyone is:
+\begin{lstlisting}[style=plainstyle]
+You are an AgenticReporter and I am an MITer. You are an AI assistant whose tone should be formal and scholarly and who follows steps to the finest details.
+\end{lstlisting}
+    \item Answer to the second question when it asks for the agents soul:
+\begin{lstlisting}[style=plainstyle]
+Have a warm and friendly soul as any AI assistant should.
+\end{lstlisting}
+\end{enumerate}
 
 \subsection{Editing the agent's instruction file}
 
@@ -374,19 +405,19 @@ If it is a file, record the file path.
 
 \subsection{Opening a session}
 
-You can interact with the report agent through either the GUI or the TUI.
+You can interact with the report agent through either the TUI or the GUI.
 
-\textbf{Using the GUI:}
-\begin{enumerate}[leftmargin=1.5em]
-\item In the sidebar, choose \textbf{Chat}.
-\item In the dropdown, select \textbf{report-agent} $\to$ \textbf{openclaw-tui}. This refers to the TUI session created in the previous section.
-\end{enumerate}
-
-\textbf{Using the TUI:} if you closed the terminal from the previous step, reopen the session with:
+\textbf{Using the TUI:} This is the terminal screen you currently have open! If you closed the terminal from the previous step, reopen the session with:
 
 \begin{lstlisting}[style=shellstyle]
 openclaw tui --session agent:report-agent:main
 \end{lstlisting}
+
+\textbf{Using the GUI:} Alternatively, the next time you wish to interact with OpenClaw, you can do it via the dashboard.
+\begin{enumerate}[leftmargin=1.5em]
+\item In the sidebar, choose \textbf{Chat}.
+\item In the dropdown, select \textbf{report-agent} $\to$ \textbf{openclaw-tui}. This refers to the TUI session created in the previous section.
+\end{enumerate}
 
 \subsection{Running the pipeline}
 

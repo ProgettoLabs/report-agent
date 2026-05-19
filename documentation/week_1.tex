@@ -45,7 +45,9 @@
   backgroundcolor=\color{codebg},
   basicstyle=\ttfamily\small\color{darktext},
   breaklines=true,
+  columns=fullflexible,
   frame=single,
+  keepspaces=true,
   rulecolor=\color{codeborder},
   framesep=8pt,
   showstringspaces=false,
@@ -60,7 +62,9 @@
   stringstyle=\color{pystring},
   commentstyle=\color{pycomment}\itshape,
   breaklines=true,
+  columns=fullflexible,
   frame=single,
+  keepspaces=true,
   rulecolor=\color{codeborder},
   framesep=8pt,
   showstringspaces=false,
@@ -73,7 +77,9 @@
   backgroundcolor=\color{codebg},
   basicstyle=\ttfamily\small\color{darktext},
   breaklines=true,
+  columns=fullflexible,
   frame=single,
+  keepspaces=true,
   rulecolor=\color{codeborder},
   framesep=8pt,
   showstringspaces=false,
@@ -131,7 +137,7 @@
   \vspace{2cm}
   {\large\color{mutedtext}
     A practical guide to the \texttt{week-1/agent.py} implementation\\
-    and the use-case folder format it executes.
+    and the use-case folder format it executes. This is what was covered in the first webinar.
   }
 
   \vfill
@@ -143,9 +149,11 @@
 
 \section{Introduction}
 
+In this document we describe the implementation discussed in the first webinar. In subsequent documents we'll cover webinar two and three. We'll call them "week 1", "week 2" and "week 3" respectively.
+
 \subsection{The value proposition: simplify repetitive knowledge work}
 
-Imagine you are an analyst at a corporation. Every quarter, your manager asks you to produce a report on the company's performance. The raw numbers change -- revenue, headcount, customer counts, expenses -- but the \textit{shape} of the job does not. You have done it before, and you will do it again next quarter, and the quarter after that.
+The first webinar exercise was based in a scenario where we imagined you are an analyst at a corporation. Every quarter, your manager asks you to produce a report on the company's performance. The raw numbers change -- revenue, headcount, customer counts, expenses -- but the \textit{shape} of the job does not. You have done it before, and you will do it again next quarter, and the quarter after that.
 
 If you stopped and wrote down exactly how you do it, it might look something like this:
 
@@ -158,8 +166,10 @@ If you stopped and wrote down exactly how you do it, it might look something lik
 
 Four steps. Each one depends on the one before it: you cannot analyse data you have not gathered, you cannot write about an analysis you have not done, and you cannot assemble a report from pieces that do not exist. When Q4 rolls around you do not invent a new process -- you run the same steps with fresh numbers.
 
+The logic above and also be applied in other contexts as described in the webinar. In particular, we introduced examples taken from human resources (\textit{hiring evaluation}), marketing (\textit{sales call analysis}), strategy (\textit{market-entry analysis agent} and legal (\textit{contract review})
+
 \begin{notebox}
-\textbf{This is the pattern we are going to automate.} Not the thinking that goes into designing the process -- that stays with you -- but the mechanical execution of each step, once the recipe is written down.
+\textbf{This is the pattern automated by the implementation we'll install.} Not the thinking that goes into designing the process -- that stays with you -- but the mechanical execution of each step, once the recipe is written down.
 \end{notebox}
 
 \subsection{A first instinct: ``just ask ChatGPT''}
@@ -187,23 +197,23 @@ Look again at the four-step list above. Notice that each step has three things y
   \item \textbf{A target format.} What does my output look like when I am done? (``A markdown table with these specific columns.'')
 \end{enumerate}
 
-If you can write those three things clearly for one step, you can hand that step to anyone -- a junior colleague, an intern, or, as it turns out, a language model -- and expect a usable result. You do not need to explain \textit{how} to do the step. You just need to specify the goal, the rules, and the shape of the output.
+If we can write those three things clearly for one step, we can hand that step to anyone -- a junior colleague, an intern, or, as it turns out, a language model -- and expect a usable result. We do not need to explain \textit{how} to do the step. We just need to specify the goal, the rules, and the shape of the output.
 
 \subsection{From a list of steps to a runnable pipeline}
 
-Now take that list of steps and give each one its own folder on your computer. Inside each folder, put two short text files:
+Now we take that list of steps and give each one its own folder on your computer. Inside each folder, we put two short text files:
 
 \begin{itemize}[leftmargin=1.5em]
   \item \texttt{spec.md} -- the goal and the guidelines for this step.
   \item \texttt{output.md} -- the required format, with an example.
 \end{itemize}
 
-At the top level, alongside the step folders, put one file with the raw numbers for this quarter (\texttt{input\_data.md}) and one file with a short description of the overall task (\texttt{agent\_task\_description.md}).
+At the top level, alongside the step folders, we put one file with the raw numbers for this quarter (\texttt{input\_data.md}) and one file with a short description of the overall task (\texttt{agent\_task\_description.md}).
 
-That is the whole setup. You have turned a vague ``write the quarterly report'' ask into a stack of small, individually-reviewable instructions. Anyone can read the folder and understand what the pipeline does, because it is all plain English.
+That is the whole setup. We have turned a vague ``write the quarterly report'' ask into a stack of small, individually-reviewable instructions. Anyone can read the folder and understand what the pipeline does, because it is all plain English.
 
 \begin{notebox}
-\textbf{The framework is the execution layer.} Once your step folders exist, a small Python script walks through them in order, hands each one's instructions to a language model, and threads the outputs together. In Week 1, the script reads those files directly from disk. The design work -- deciding what the steps are and what each one should produce -- is the part that requires your judgment. The script just runs the recipe.
+\textbf{The framework is the execution layer.} Once the step folders exist, a small Python script walks through them in order, hands each one's instructions to a language model, and threads the outputs together. In Week 1, the script reads those files directly from disk. The design work -- deciding what the steps are and what each one should produce -- is the part that requires your judgment. The script just runs the recipe.
 \end{notebox}
 
 \subsection{Why this approach works}
@@ -218,11 +228,11 @@ Three practical benefits fall out of organising the work this way:
 
 \subsection{Where this can go next}
 
-The Week 1 pipeline is deliberately the simplest thing that works: steps run one after another, the agent reads local files, and a human kicks the whole thing off. That is enough for the quarterly report, but it is not the whole story.
+The Week 1 pipeline is deliberately simple and powerful: steps run one after another, the agent reads local files, and a human kicks the whole thing off. That is enough for the quarterly report, but it is not the whole story.
 
-In Week 2, you add MCP so the same assets can be exposed as resources instead of being read only as local files. Later versions could add tools, remote data sources, hosted execution, or scheduled runs. The important point is that the step design does not need to change just because the execution environment becomes more capable.
+In Week 2, you add MCP so the same assets can be exposed as shared resources instead of being read only as local files. This means you can have the best report writer in the world share its expertise with many agents. We will see in week2 how upgraded versions can add tools, remote data sources, hosted execution, or scheduled runs. The important point is that the step design does not need to change just because the execution environment becomes more capable.
 
-In Week 3, we would look at a final extension using OpenClaw which would allow autonomous agents to schedule and run our scripts at our convenience.
+In Week 3, we will look at a final extension using OpenClaw which allowsautonomous agents to schedule and run scripts at your convenience.
 
 \clearpage
 
@@ -230,7 +240,7 @@ In Week 3, we would look at a final extension using OpenClaw which would allow a
 
 \subsection{The Agent Runner}
 
-In Week 1 you build a small agent runner that executes a repeatable report-writing workflow. The runner receives a single command-line argument, such as \texttt{"quarterly report"}, lists the available use cases, and asks the language model to resolve that input to the closest exact folder name.
+In Week 1's coude we introduce a small agent runner that executes a repeatable report-writing workflow (or any of the others introduced). The runner receives a single command-line argument, such as \texttt{"quarterly report"}, lists the available use cases, and asks the language model to resolve that input to the closest exact folder name.
 
 The Week 1 agent reads everything from the local file system:
 
@@ -389,6 +399,8 @@ To create a new Week 1 workflow:
 
 \subsection{Imports and configuration}
 
+In this Annex we describe the code at a high level and in the next one how to install it on your computer.
+
 \begin{lstlisting}[style=pythonstyle]
 import argparse
 import asyncio
@@ -401,6 +413,7 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_ollama import ChatOllama
 from langchain_openai import ChatOpenAI
+
 
 ENV_PATH = Path(__file__).parent.parent / ".env"
 USE_CASES_DIR = Path(__file__).parent.parent / "use-cases"
@@ -441,7 +454,7 @@ def load_api_key(cli_key: str | None) -> str | None:
 \begin{lstlisting}[style=pythonstyle]
 def initialize_model(api_key: str | None) -> BaseChatModel:
     if api_key:
-        return ChatOpenAI(model="gpt-4o-mini", api_key=api_key, temperature=0)
+        return ChatOpenAI(model="gpt-5.4-mini", api_key=api_key, temperature=0)
     print("[model] No OpenAI API key found -- using Ollama")
     return ChatOllama(model="gemma4:e4b", num_ctx=32768, temperature=0)
 \end{lstlisting}
@@ -618,7 +631,7 @@ async def run_pipeline(use_case_input: str, api_key: str | None) -> str:
     return final_output
 \end{lstlisting}
 
-The Ollama settings are conservative:
+The default Ollama settings are conservative:
 
 \begin{itemize}[leftmargin=1.5em]
   \item \texttt{model="gemma4:e4b"} selects the local Ollama model.
@@ -626,26 +639,28 @@ The Ollama settings are conservative:
   \item \texttt{temperature=0} makes the output more repeatable.
 \end{itemize}
 
-When an OpenAI key is available, the script uses \texttt{gpt-4o-mini} with the same deterministic temperature setting.
+When an OpenAI key is available, the script uses \texttt{gpt-5.4-mini} with the same deterministic temperature setting.
 
 \clearpage
 
 \section{Setup Instructions}
 
-\subsection{1. Install dependencies}
+\subsection{1. Install dependencies and run code if you use an OpenAI token}
 
-Create a virtual environment and install the packages used by Week 1:
+The first thing you need to do is open the \texttt{agent.py} file and add your OpenAI token. This is a token you can get when you purchase a subscription to ChatGPT.
+
+Once you CD into the directory where you unzip the code provided, really there are only the following four terminal commands to create a virtual environment, install the packages used by Week 1, and run the code:
 
 \begin{lstlisting}[style=shellstyle]
-python3 -m venv venv
-source venv/bin/activate
-pip install langchain-ollama langchain-openai python-dotenv
+python3 -m venv venv-agentic-webinars
+source venv-agentic-webinars/bin/activate
+pip install -r requirements.txt
+python week-1/agent.py "quarterly report"
 \end{lstlisting}
 
 If you are using the repository's full \texttt{requirements.txt}, these dependencies are already included.
 
-\subsection{2. Configure the model}
-
+\subsection{2. OpenAI key configuration}
 The repository includes a \texttt{.env} file at the root with a blank \texttt{OPENAI\_API\_KEY} entry. You have two ways to provide a key:
 
 \textbf{Option A -- edit \texttt{.env} directly:}
@@ -662,20 +677,36 @@ python week-1/agent.py "quarterly report" --api-key your-api-key
 
 The \texttt{--api-key} flag always takes precedence and writes the key back to \texttt{.env} so subsequent runs pick it up without needing the flag again.
 
-\textbf{No key -- Ollama fallback:} if \texttt{OPENAI\_API\_KEY} is blank in \texttt{.env} and no \texttt{--api-key} flag is given, the script automatically uses the local Ollama model. Install Ollama from \url{https://ollama.com/download} and run:
+\subsection{[Optional] Configure the model if you want to run a local model}
+
+By default, the script uses Ollama if you have not provided the OpenAI API keys:
+
+Install Ollama from \url{https://ollama.com/download}, then make sure the Ollama server is running:
+
+\begin{notebox}
+    If you already have ollama installed, it is still advisable to run \texttt{brew install ollama} since it will update it to the latest version.
+\end{notebox}
 
 \begin{lstlisting}[style=shellstyle]
 ollama serve
+\end{lstlisting}
+
+In another terminal, pull the model used by the script:
+
+\begin{lstlisting}[style=shellstyle]
 ollama pull gemma4:e4b
 \end{lstlisting}
 
-\subsection{3. Run the agent}
+
+\subsubsection{2.1 Run the agent}
 
 From the repository root:
 
 \begin{lstlisting}[style=shellstyle]
 python week-1/agent.py "quarterly report"
 \end{lstlisting}
+
+\subsection{Read the results}
 
 The resolver maps \texttt{"quarterly report"} to the matching use-case folder, such as \texttt{quarterly-report}. The agent prints the resolved use case and each step as it runs. When it finishes, inspect:
 
