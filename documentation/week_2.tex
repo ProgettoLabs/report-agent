@@ -338,7 +338,7 @@ USE_CASES_DIR = Path(__file__).parent.parent / "use-cases"
 _mcp_client: Client | None = None
 \end{lstlisting}
 
-\texttt{AGENT\_TYPE} chooses the read channel. Keep it as \texttt{"local"} to behave like Week 1. Set it to \texttt{"mcp"} to read through the MCP server.
+\texttt{AGENT\_TYPE} is the default read channel. It is used when no \texttt{--agent-type} flag is passed on the command line. Keep it as \texttt{"local"} to behave like Week 1. Set it to \texttt{"mcp"} to read through the MCP server. The CLI flag always takes precedence over this global when provided.
 
 \texttt{ENV\_PATH} points at the shared \texttt{.env} file in the repository root, the same file used by Week 1.
 
@@ -458,21 +458,23 @@ After those files are loaded, the same prompt-building and model invocation logi
 The agent should only create an MCP client when it actually needs MCP mode. That is handled by \texttt{run\_pipeline\_with\_client}.
 
 \begin{lstlisting}[style=pythonstyle]
-async def run_pipeline_with_client(use_case_input: str, api_key: str | None) -> str:
+async def run_pipeline_with_client(
+    use_case_input: str, api_key: str | None, agent_type: str = AGENT_TYPE
+) -> str:
     global _mcp_client
 
-    if AGENT_TYPE == "local":
-        return await run_pipeline(use_case_input, api_key)
+    if agent_type == "local":
+        return await run_pipeline(use_case_input, api_key, agent_type)
 
     async with Client(mcp) as client:
         _mcp_client = client
         try:
-            return await run_pipeline(use_case_input, api_key)
+            return await run_pipeline(use_case_input, api_key, agent_type)
         finally:
             _mcp_client = None
 \end{lstlisting}
 
-In local mode, no MCP client is created. In MCP mode, the client is opened once for the full pipeline run and then cleared in the \texttt{finally} block.
+\texttt{agent\_type} defaults to the global \texttt{AGENT\_TYPE} but can be overridden by the CLI. In local mode, no MCP client is created. In MCP mode, the client is opened once for the full pipeline run and then cleared in the \texttt{finally} block.
 
 \begin{notebox}
 \textbf{Why one client for the whole run?} The pipeline reads multiple resources: use cases, steps, task, input, specs, and output formats. Opening the client once keeps the lifetime clear and avoids repeated setup work.
@@ -492,22 +494,26 @@ The repository includes a \texttt{.env} file at the root with a blank \texttt{OP
 
 \subsection{Local mode}
 
-With \texttt{AGENT\_TYPE = "local"} (the default in the code), the agent reads files directly, like Week 1:
+Pass \texttt{--agent-type local} on the command line, or leave it unset if \texttt{AGENT\_TYPE = "local"} in the code. The agent reads files directly, like Week 1:
 
 \begin{lstlisting}[style=shellstyle]
-python week-2/agent.py "quarterly report"
-python week-2/agent.py "quarterly report" --api-key your-key
+python week-2/agent.py "quarterly report" --agent-type local
+python week-2/agent.py "quarterly report" --agent-type local --api-key your-key
 \end{lstlisting}
 
 \subsection{MCP mode}
 
-Set \texttt{AGENT\_TYPE = "mcp"} in \texttt{week-2/agent.py}, then run:
+Pass \texttt{--agent-type mcp} on the command line, or set \texttt{AGENT\_TYPE = "mcp"} in \texttt{week-2/agent.py} to make it the default:
 
 \begin{lstlisting}[style=shellstyle]
-python week-2/agent.py "quarterly report"
+python week-2/agent.py "quarterly report" --agent-type mcp
 \end{lstlisting}
 
 The pipeline behavior is identical from the user's point of view. Internally, the agent reads task assets through the MCP resources instead of direct file reads.
+
+\begin{notebox}
+\textbf{CLI flag takes precedence.} If \texttt{--agent-type} is passed, it overrides the \texttt{AGENT\_TYPE} global regardless of what is set in the file. Omitting the flag falls back to the global.
+\end{notebox}
 
 
 \section{Week 1 vs Week 2 Summary}
@@ -522,7 +528,7 @@ Key source & \texttt{.env} or \texttt{--api-key} flag & \texttt{.env} or \texttt
 Main script & \texttt{week-1/agent.py} & \texttt{week-2/agent.py} \\
 Server file & None & \texttt{week-2/mcp\_server.py} \\
 Fetcher & \texttt{fetch\_asset(path)} & \texttt{fetch\_asset(uri, channel)} \\
-Channel switch & -- & \texttt{AGENT\_TYPE} in \texttt{agent.py} \\
+Channel switch & -- & \texttt{AGENT\_TYPE} global or \texttt{--agent-type} CLI flag \\
 New dependency & \texttt{python-dotenv} & \texttt{fastmcp} \\
 \end{tabular}
 \end{center}
@@ -532,7 +538,7 @@ New dependency & \texttt{python-dotenv} & \texttt{fastmcp} \\
 \begin{itemize}[leftmargin=1.5em]
   \item \textbf{Forgetting to install FastMCP.} MCP mode needs \texttt{fastmcp}; Week 1 does not.
   \item \textbf{Forgetting to install \texttt{python-dotenv}.} Both weeks need it to read and write the shared \texttt{.env} file.
-  \item \textbf{Setting \texttt{AGENT\_TYPE} to an unsupported value.} It must be exactly \texttt{"local"} or \texttt{"mcp"}.
+  \item \textbf{Setting \texttt{AGENT\_TYPE} to an unsupported value.} It must be exactly \texttt{"local"} or \texttt{"mcp"}. The same applies to the \texttt{--agent-type} CLI flag; passing any other value is rejected by \texttt{argparse}.
   \item \textbf{Leaving \texttt{OPENAI\_API\_KEY} blank and expecting OpenAI.} If the key is absent in both \texttt{.env} and the \texttt{--api-key} flag, the agent silently falls back to Ollama.
   \item \textbf{Breaking resource URI names.} The client and server must agree on URI patterns such as \texttt{use-cases://\{name\}/input}.
   \item \textbf{Assuming MCP mode writes remotely.} In this project, writes still go to the local use-case folder.

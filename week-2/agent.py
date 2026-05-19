@@ -7,7 +7,7 @@ uses an LLM to resolve it before running. All step outputs are recorded in
 context.json.
 
 Usage:
-    python agent.py <use_case_name> [--api-key <key>]
+    python agent.py <use_case_name> [--api-key <key>] [--agent-type <local|mcp>]
 
 Uses OpenAI if an API key is available (via --api-key flag or OPENAI_API_KEY in
 the root .env file), otherwise falls back to Ollama running locally.
@@ -215,8 +215,8 @@ async def run_step(
     return step_output
 
 
-async def run_pipeline(use_case_input: str, api_key: str | None) -> str:
-    channel = AGENT_TYPE
+async def run_pipeline(use_case_input: str, api_key: str | None, agent_type: str = AGENT_TYPE) -> str:
+    channel = agent_type
     if channel not in {"local", "mcp"}:
         raise ValueError("AGENT_TYPE must be either 'local' or 'mcp'")
 
@@ -254,16 +254,16 @@ async def run_pipeline(use_case_input: str, api_key: str | None) -> str:
     return final_output
 
 
-async def run_pipeline_with_client(use_case_input: str, api_key: str | None) -> str:
+async def run_pipeline_with_client(use_case_input: str, api_key: str | None, agent_type: str = AGENT_TYPE) -> str:
     global _mcp_client
 
-    if AGENT_TYPE == "local":
-        return await run_pipeline(use_case_input, api_key)
+    if agent_type == "local":
+        return await run_pipeline(use_case_input, api_key, agent_type)
 
     async with Client(mcp) as client:
         _mcp_client = client
         try:
-            return await run_pipeline(use_case_input, api_key)
+            return await run_pipeline(use_case_input, api_key, agent_type)
         finally:
             _mcp_client = None
 
@@ -272,10 +272,12 @@ def main():
     parser = argparse.ArgumentParser(description="Run an agentic pipeline use case.")
     parser.add_argument("use_case", help="Name of the use case to run (fuzzy matched)")
     parser.add_argument("--api-key", help="OpenAI API key (saved to .env for future runs)")
+    parser.add_argument("--agent-type", choices=["local", "mcp"], help="Agent type override (default: value of AGENT_TYPE global)")
     args = parser.parse_args()
 
     api_key = load_api_key(args.api_key)
-    asyncio.run(run_pipeline_with_client(args.use_case, api_key))
+    agent_type = args.agent_type if args.agent_type else AGENT_TYPE
+    asyncio.run(run_pipeline_with_client(args.use_case, api_key, agent_type))
 
 
 if __name__ == "__main__":
