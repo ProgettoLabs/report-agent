@@ -7,40 +7,43 @@ LLM with the step's spec, output format, and all previous steps' outputs. All
 step outputs are recorded in context.json.
 
 Usage:
-    python agent.py <use_case_name>
+    python agent.py <use_case_name> [--api-key <key>]
 
-Requires Ollama running locally with the target model pulled when using the
-Ollama model type.
+Uses OpenAI if an API key is available (via --api-key flag or OPENAI_API_KEY in
+the root .env file), otherwise falls back to Ollama running locally.
 """
 
+import argparse
 import asyncio
 import json
-import sys
+import os
 from pathlib import Path
 
+from dotenv import load_dotenv, set_key
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_ollama import ChatOllama
 from langchain_openai import ChatOpenAI
 
-MODEL_TYPE = "ollama"  # either "ollama" or "openai"
-OPENAI_API_KEY = ""
-
+ENV_PATH = Path(__file__).parent.parent / ".env"
 USE_CASES_DIR = Path(__file__).parent.parent / "use-cases"
+
+
+def load_api_key(cli_key: str | None) -> str | None:
+    load_dotenv(ENV_PATH)
+    if cli_key:
+        set_key(str(ENV_PATH), "OPENAI_API_KEY", cli_key)
+        return cli_key
+    return os.getenv("OPENAI_API_KEY") or None
 
 
 # ── model helpers ─────────────────────────────────────────────────────────────
 
-def initialize_model() -> BaseChatModel:
-    if MODEL_TYPE == "ollama":
-        return ChatOllama(model="gemma4:e4b", num_ctx=32768, temperature=0)
-
-    if MODEL_TYPE == "openai":
-        if not OPENAI_API_KEY:
-            raise ValueError("OPENAI_API_KEY must be set when MODEL_TYPE is 'openai'")
-        return ChatOpenAI(model="gpt-5.4-mini", api_key=OPENAI_API_KEY, temperature=0)
-
-    raise ValueError("MODEL_TYPE must be either 'ollama' or 'openai'")
+def initialize_model(api_key: str | None) -> BaseChatModel:
+    if api_key:
+        return ChatOpenAI(model="gpt-5.4-mini", api_key=api_key, temperature=0)
+    print("[model] No OpenAI API key found — using Ollama")
+    return ChatOllama(model="gemma4:e4b", num_ctx=32768, temperature=0)
 
 
 # ── data-access helpers (file system) ────────────────────────────────────────
@@ -161,8 +164,8 @@ async def run_step(
     return step_output
 
 
-async def run_pipeline(use_case_input: str) -> str:
-    llm = initialize_model()
+async def run_pipeline(use_case_input: str, api_key: str | None) -> str:
+    llm = initialize_model(api_key)
     use_case = await resolve_use_case(use_case_input, llm)
 
     agent_task_description = await fetch_asset(USE_CASES_DIR / use_case / "agent_task_description.md")
@@ -197,11 +200,13 @@ async def run_pipeline(use_case_input: str) -> str:
 
 
 def main():
-    if len(sys.argv) != 2:
-        print("Usage: python agent.py <use_case_name>")
-        sys.exit(1)
+    parser = argparse.ArgumentParser(description="Run an agentic pipeline use case.")
+    parser.add_argument("use_case", help="Name of the use case to run (fuzzy matched)")
+    parser.add_argument("--api-key", help="OpenAI API key (saved to .env for future runs)")
+    args = parser.parse_args()
 
-    asyncio.run(run_pipeline(sys.argv[1]))
+    api_key = load_api_key(args.api_key)
+    asyncio.run(run_pipeline(args.use_case, api_key))
 
 
 if __name__ == "__main__":

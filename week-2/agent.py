@@ -7,16 +7,21 @@ uses an LLM to resolve it before running. All step outputs are recorded in
 context.json.
 
 Usage:
-    python agent.py <use_case_name>
+    python agent.py <use_case_name> [--api-key <key>]
 
-Requires Ollama running locally with the target model pulled when using the
-Ollama model type.
+Uses OpenAI if an API key is available (via --api-key flag or OPENAI_API_KEY in
+the root .env file), otherwise falls back to Ollama running locally.
 """
 
+import argparse
 import asyncio
 import json
-import sys
+import os
 from pathlib import Path
+
+import sys
+
+from dotenv import load_dotenv, set_key
 
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -28,27 +33,28 @@ from langchain_openai import ChatOpenAI
 
 from mcp_server import mcp
 
-MODEL_TYPE = "ollama"  # either "ollama" or "openai"
-OPENAI_API_KEY = ""
-
-AGENT_TYPE = "local"  # either "local" or "mcp"
+AGENT_TYPE = "mcp"  # either "local" or "mcp"
+ENV_PATH = Path(__file__).parent.parent / ".env"
 USE_CASES_DIR = Path(__file__).parent.parent / "use-cases"
 
 _mcp_client: Client | None = None
 
 
+def load_api_key(cli_key: str | None) -> str | None:
+    load_dotenv(ENV_PATH)
+    if cli_key:
+        set_key(str(ENV_PATH), "OPENAI_API_KEY", cli_key)
+        return cli_key
+    return os.getenv("OPENAI_API_KEY") or None
+
+
 # Model helpers
 
-def initialize_model() -> BaseChatModel:
-    if MODEL_TYPE == "ollama":
-        return ChatOllama(model="gemma4:e4b", num_ctx=32768, temperature=0)
-
-    if MODEL_TYPE == "openai":
-        if not OPENAI_API_KEY:
-            raise ValueError("OPENAI_API_KEY must be set when MODEL_TYPE is 'openai'")
-        return ChatOpenAI(model="gpt-5.4-mini", api_key=OPENAI_API_KEY, temperature=0)
-
-    raise ValueError("MODEL_TYPE must be either 'ollama' or 'openai'")
+def initialize_model(api_key: str | None) -> BaseChatModel:
+    if api_key:
+        return ChatOpenAI(model="gpt-5.4-mini", api_key=api_key, temperature=0)
+    print("[model] No OpenAI API key found — using Ollama")
+    return ChatOllama(model="gemma4:e4b", num_ctx=32768, temperature=0)
 
 
 # Data-access helpers
@@ -209,12 +215,12 @@ async def run_step(
     return step_output
 
 
-async def run_pipeline(use_case_input: str) -> str:
+async def run_pipeline(use_case_input: str, api_key: str | None) -> str:
     channel = AGENT_TYPE
     if channel not in {"local", "mcp"}:
         raise ValueError("AGENT_TYPE must be either 'local' or 'mcp'")
 
-    llm = initialize_model()
+    llm = initialize_model(api_key)
     use_case = await resolve_use_case(use_case_input, llm, channel)
 
     agent_task_description = await fetch_asset(asset_uri(use_case, channel, "task"), channel)
@@ -248,26 +254,28 @@ async def run_pipeline(use_case_input: str) -> str:
     return final_output
 
 
-async def run_pipeline_with_client(use_case_input: str) -> str:
+async def run_pipeline_with_client(use_case_input: str, api_key: str | None) -> str:
     global _mcp_client
 
     if AGENT_TYPE == "local":
-        return await run_pipeline(use_case_input)
+        return await run_pipeline(use_case_input, api_key)
 
     async with Client(mcp) as client:
         _mcp_client = client
         try:
-            return await run_pipeline(use_case_input)
+            return await run_pipeline(use_case_input, api_key)
         finally:
             _mcp_client = None
 
 
 def main():
-    if len(sys.argv) != 2:
-        print("Usage: python agent.py <use_case_name>")
-        sys.exit(1)
+    parser = argparse.ArgumentParser(description="Run an agentic pipeline use case.")
+    parser.add_argument("use_case", help="Name of the use case to run (fuzzy matched)")
+    parser.add_argument("--api-key", help="OpenAI API key (saved to .env for future runs)")
+    args = parser.parse_args()
 
-    asyncio.run(run_pipeline_with_client(sys.argv[1]))
+    api_key = load_api_key(args.api_key)
+    asyncio.run(run_pipeline_with_client(args.use_case, api_key))
 
 
 if __name__ == "__main__":

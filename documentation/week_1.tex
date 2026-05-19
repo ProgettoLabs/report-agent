@@ -274,6 +274,7 @@ The runner expects this repository-level layout:
 
 \begin{lstlisting}[style=plainstyle]
 report-agent/
+|-- .env                      (OpenAI key, committed with blank value)
 |-- week-1/
 |   +-- agent.py
 |
@@ -389,52 +390,63 @@ To create a new Week 1 workflow:
 \subsection{Imports and configuration}
 
 \begin{lstlisting}[style=pythonstyle]
+import argparse
 import asyncio
 import json
-import sys
+import os
 from pathlib import Path
 
+from dotenv import load_dotenv, set_key
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_ollama import ChatOllama
 from langchain_openai import ChatOpenAI
 
-MODEL_TYPE = "ollama"  # either "ollama" or "openai"
-OPENAI_API_KEY = ""
-
+ENV_PATH = Path(__file__).parent.parent / ".env"
 USE_CASES_DIR = Path(__file__).parent.parent / "use-cases"
 \end{lstlisting}
 
 The Week 1 script uses:
 
 \begin{itemize}[leftmargin=1.5em]
+  \item \texttt{argparse} to parse the command-line use-case argument and optional \texttt{--api-key} flag.
   \item \texttt{asyncio} so the top-level pipeline can be written as async functions.
   \item \texttt{json} to write \texttt{context.json}.
+  \item \texttt{os} to read environment variables after loading the \texttt{.env} file.
   \item \texttt{Path} to work with local files and directories.
+  \item \texttt{load\_dotenv} and \texttt{set\_key} from \texttt{python-dotenv} to read and update \texttt{.env}.
   \item \texttt{BaseChatModel} to type the shared chat model interface.
   \item \texttt{ChatOllama} to call a local model through LangChain.
   \item \texttt{ChatOpenAI} to call OpenAI through LangChain.
   \item \texttt{SystemMessage} and \texttt{HumanMessage} to build chat-style prompts.
 \end{itemize}
 
-\texttt{MODEL\_TYPE} chooses the model provider. Keep it as \texttt{"ollama"} for the local Ollama model, or set it to \texttt{"openai"} and fill in \texttt{OPENAI\_API\_KEY}.
+\texttt{ENV\_PATH} points at the shared \texttt{.env} file in the repository root. The script reads the OpenAI API key from there; if a key is passed on the command line it is written back to that file for future runs.
+
+\subsection{Loading the API key}
+
+\begin{lstlisting}[style=pythonstyle]
+def load_api_key(cli_key: str | None) -> str | None:
+    load_dotenv(ENV_PATH)
+    if cli_key:
+        set_key(str(ENV_PATH), "OPENAI_API_KEY", cli_key)
+        return cli_key
+    return os.getenv("OPENAI_API_KEY") or None
+\end{lstlisting}
+
+\texttt{load\_api\_key} handles the three cases in order. If a key was passed on the command line it becomes the source of truth and is written back to \texttt{.env} so future runs pick it up automatically. If no flag was given, the key already in \texttt{.env} is used. If neither source provides a key, \texttt{None} is returned and the agent falls back to Ollama.
 
 \subsection{Initializing the model}
 
 \begin{lstlisting}[style=pythonstyle]
-def initialize_model() -> BaseChatModel:
-    if MODEL_TYPE == "ollama":
-        return ChatOllama(model="gemma4:e4b", num_ctx=32768, temperature=0)
-
-    if MODEL_TYPE == "openai":
-        if not OPENAI_API_KEY:
-            raise ValueError("OPENAI_API_KEY must be set when MODEL_TYPE is 'openai'")
-        return ChatOpenAI(model="gpt-5.4-mini", api_key=OPENAI_API_KEY, temperature=0)
-
-    raise ValueError("MODEL_TYPE must be either 'ollama' or 'openai'")
+def initialize_model(api_key: str | None) -> BaseChatModel:
+    if api_key:
+        return ChatOpenAI(model="gpt-4o-mini", api_key=api_key, temperature=0)
+    print("[model] No OpenAI API key found -- using Ollama")
+    return ChatOllama(model="gemma4:e4b", num_ctx=32768, temperature=0)
 \end{lstlisting}
 
-This helper keeps the rest of the pipeline independent of the model provider. Both branches return a LangChain chat model with the same \texttt{invoke(...)} interface.
+This helper keeps the rest of the pipeline independent of the model provider. Both branches return a LangChain chat model with the same \texttt{invoke(...)} interface. The model is chosen automatically: OpenAI when a key is available, Ollama otherwise.
 
 \subsection{Reading local assets}
 
@@ -580,8 +592,8 @@ The important behavior is the write to \texttt{context.json}. After each step, t
 \subsection{Running the pipeline}
 
 \begin{lstlisting}[style=pythonstyle]
-async def run_pipeline(use_case_input: str) -> str:
-    llm = initialize_model()
+async def run_pipeline(use_case_input: str, api_key: str | None) -> str:
+    llm = initialize_model(api_key)
     use_case = await resolve_use_case(use_case_input, llm)
 
     agent_task_description = await fetch_asset(USE_CASES_DIR / use_case / "agent_task_description.md")
@@ -606,7 +618,7 @@ async def run_pipeline(use_case_input: str) -> str:
     return final_output
 \end{lstlisting}
 
-The default Ollama settings are conservative:
+The Ollama settings are conservative:
 
 \begin{itemize}[leftmargin=1.5em]
   \item \texttt{model="gemma4:e4b"} selects the local Ollama model.
@@ -614,7 +626,7 @@ The default Ollama settings are conservative:
   \item \texttt{temperature=0} makes the output more repeatable.
 \end{itemize}
 
-When \texttt{MODEL\_TYPE = "openai"}, the script uses \texttt{gpt-5.4-mini} with the same deterministic temperature setting.
+When an OpenAI key is available, the script uses \texttt{gpt-4o-mini} with the same deterministic temperature setting.
 
 \clearpage
 
@@ -627,32 +639,34 @@ Create a virtual environment and install the packages used by Week 1:
 \begin{lstlisting}[style=shellstyle]
 python3 -m venv venv
 source venv/bin/activate
-pip install langchain-ollama langchain-openai
+pip install langchain-ollama langchain-openai python-dotenv
 \end{lstlisting}
 
 If you are using the repository's full \texttt{requirements.txt}, these dependencies are already included.
 
 \subsection{2. Configure the model}
 
-By default, the script uses Ollama:
+The repository includes a \texttt{.env} file at the root with a blank \texttt{OPENAI\_API\_KEY} entry. You have two ways to provide a key:
 
-Install Ollama from \url{https://ollama.com/download}, then make sure the Ollama server is running:
+\textbf{Option A -- edit \texttt{.env} directly:}
+
+\begin{lstlisting}[style=plainstyle]
+OPENAI_API_KEY=your-api-key
+\end{lstlisting}
+
+\textbf{Option B -- pass it on the command line:}
+
+\begin{lstlisting}[style=shellstyle]
+python week-1/agent.py "quarterly report" --api-key your-api-key
+\end{lstlisting}
+
+The \texttt{--api-key} flag always takes precedence and writes the key back to \texttt{.env} so subsequent runs pick it up without needing the flag again.
+
+\textbf{No key -- Ollama fallback:} if \texttt{OPENAI\_API\_KEY} is blank in \texttt{.env} and no \texttt{--api-key} flag is given, the script automatically uses the local Ollama model. Install Ollama from \url{https://ollama.com/download} and run:
 
 \begin{lstlisting}[style=shellstyle]
 ollama serve
-\end{lstlisting}
-
-In another terminal, pull the model used by the script:
-
-\begin{lstlisting}[style=shellstyle]
 ollama pull gemma4:e4b
-\end{lstlisting}
-
-To use OpenAI instead, change the model configuration in \texttt{week-1/agent.py}:
-
-\begin{lstlisting}[style=pythonstyle]
-MODEL_TYPE = "openai"
-OPENAI_API_KEY = "your-api-key"
 \end{lstlisting}
 
 \subsection{3. Run the agent}
